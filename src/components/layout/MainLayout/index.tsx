@@ -1,7 +1,22 @@
 "use client";
 
 import React, { useState } from "react";
-import { Layout, Menu, Typography, Card, ConfigProvider } from "antd";
+import {
+    Layout,
+    Menu,
+    Card,
+    ConfigProvider,
+    Dropdown,
+    Avatar,
+    Typography,
+    Space,
+} from "antd";
+import {
+    UserOutlined,
+    SettingOutlined,
+    LogoutOutlined,
+    DownOutlined,
+} from "@ant-design/icons";
 import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
@@ -9,7 +24,7 @@ import { menuItems } from "../MenuItems";
 import "antd/dist/reset.css";
 
 const { Header, Sider, Content, Footer } = Layout;
-const { Title } = Typography;
+const { Title, Text } = Typography;
 
 export default function ClientLayout({
     children,
@@ -21,7 +36,7 @@ export default function ClientLayout({
     const pathname = usePathname();
 
     const handleLogoClick = () => {
-        setCollapsed(!collapsed); // toggle sidebar collapse
+        setCollapsed(!collapsed);
     };
 
     const handleMenuClick = ({ key }: { key: string }) => {
@@ -33,114 +48,201 @@ export default function ClientLayout({
         <ConfigProvider
             theme={{
                 token: {
-                    colorPrimary: "#21ba0aff", // your primary color
+                    colorPrimary: "#21ba0aff",
+                    fontFamily: "'Poppins', sans-serif",
                 },
             }}
         >
-            <div
+            <Layout
                 style={{
-                    minHeight: "100vh",
-                    display: "flex",
-                    justifyContent: "center",
-                    alignItems: "flex-start",
+                    height: "100vh", // fixed viewport height
+                    overflow: "hidden", // prevent page scroll
+                    background: "#f5f5f5",
                 }}
             >
-                {/* Card wrapper for floating effect */}
-
-                <Layout>
-                    {/* Sidebar */}
-                    <Sider
-                        collapsed={collapsed}
-                        onCollapse={(value) => setCollapsed(value)}
-                        theme="light"
+                {/* Sidebar */}
+                <Sider
+                    collapsed={collapsed}
+                    onCollapse={(value) => setCollapsed(value)}
+                    theme="light"
+                    style={{
+                        margin: 16,
+                        borderRadius: 12,
+                        background: "#fff",
+                        boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                        overflow: "hidden",
+                    }}
+                >
+                    <div
                         style={{
+                            height: 42,
                             margin: 16,
-                            borderRadius: 12,
-                            background: "#fff",
+                            cursor: "pointer",
+                            borderRadius: 8,
                             overflow: "hidden",
-                            boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
+                            transition: "width 0.3s ease",
+                            width: collapsed ? 45 : 160,
                         }}
+                        onClick={handleLogoClick}
                     >
-                        <div
+                        <Image
+                            src={
+                                collapsed
+                                    ? "/assets/logo/moneypulate-icon.svg"
+                                    : "/assets/logo/moneypulate-logo-01.svg"
+                            }
+                            alt="Logo"
+                            width={collapsed ? 45 : 160}
+                            height={38}
                             style={{
-                                height: 42,
-                                margin: 16,
-                                cursor: "pointer",
                                 borderRadius: 8,
-                                overflow: "hidden",
-                                transition: "width 0.3s ease", // smooth width transition
-                                width: collapsed ? 45 : 160, // width changes with collapsed state
+                                transition: "opacity 0.3s ease",
+                                opacity: 1,
                             }}
-                            onClick={handleLogoClick}
-                        >
-                            <Image
-                                src={
-                                    collapsed
-                                        ? "/assets/logo/moneypulate-icon.svg"
-                                        : "/assets/logo/moneypulate-logo-01.svg"
-                                }
-                                alt="Logo"
-                                width={collapsed ? 45 : 160} // keep image width same as container
-                                height={38}
-                                style={{
-                                    borderRadius: 8,
-                                    transition: "opacity 0.3s ease", // optional: fade between images
-                                    opacity: 1,
-                                }}
-                                key={collapsed ? "collapsed" : "full"} // forces React to treat it as a new image
-                            />
-                        </div>
-
-                        <Menu
-                            theme="light"
-                            mode="inline"
-                            selectedKeys={[
-                                menuItems.find((item) => item.path === pathname)
-                                    ?.key || "",
-                            ]}
-                            onClick={handleMenuClick}
-                            items={menuItems.map(({ key, icon, label }) => ({
-                                key,
-                                icon,
-                                label,
-                            }))}
-                            style={{ borderRadius: 8 }}
+                            key={collapsed ? "collapsed" : "full"}
                         />
-                    </Sider>
+                    </div>
 
-                    {/* Main content */}
-                    <Layout
-                        style={{
-                            margin: 16,
-                            borderRadius: 12,
-                            background: "transparent", // keep transparent, cards handle background
-                            flex: 1,
-                            display: "flex",
-                            flexDirection: "column",
-                            gap: 16, // consistent spacing between cards
-                        }}
-                    >
-                        {/* Header Card */}
+                    <Menu
+                        theme="light"
+                        mode="inline"
+                        selectedKeys={[
+                            menuItems.find((item) => item.path === pathname)
+                                ?.key || "",
+                        ]}
+                        onClick={handleMenuClick}
+                        items={menuItems.map(({ key, icon, label }) => ({
+                            key,
+                            icon,
+                            label,
+                        }))}
+                        style={{ borderRadius: 8 }}
+                    />
+                </Sider>
+
+                {/* Main layout */}
+                <Layout
+                    style={{
+                        margin: "16px 10px 16px 0",
+                        borderRadius: 12,
+                        background: "transparent",
+                        display: "flex",
+                        flexDirection: "column",
+                        overflow: "hidden", // keep header/footer fixed
+                    }}
+                >
+                    {/* Header */}
+                    <div style={{ paddingBottom: 6 }}>
+                        {" "}
                         <Card
                             style={{
                                 borderRadius: 12,
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                                 background: "#fff",
                             }}
-                            styles={{ body: { padding: 16 } }}
+                            styles={{ body: { padding: "6px 16px" } }}
                         >
-                            <div className="flex items-center gap-3">
+                            <div
+                                style={{
+                                    display: "flex",
+                                    justifyContent: "space-between",
+                                    alignItems: "center",
+                                }}
+                            >
+                                {/* Left: Page Title */}
                                 <Title level={4} style={{ margin: 0 }}>
                                     Dashboard
                                 </Title>
+
+                                {/* Right: Profile Dropdown */}
+                                <Dropdown
+                                    menu={{
+                                        items: [
+                                            {
+                                                key: "profile",
+                                                icon: <UserOutlined />,
+                                                label: "Profile",
+                                            },
+                                            {
+                                                key: "settings",
+                                                icon: <SettingOutlined />,
+                                                label: "Settings",
+                                            },
+                                            {
+                                                type: "divider",
+                                            },
+                                            {
+                                                key: "logout",
+                                                icon: <LogoutOutlined />,
+                                                label: "Logout",
+                                            },
+                                        ],
+                                        onClick: ({ key }) => {
+                                            if (key === "logout") {
+                                                // Add your logout logic here
+                                                console.log("Logging out...");
+                                            } else {
+                                                console.log(`Clicked ${key}`);
+                                            }
+                                        },
+                                    }}
+                                    placement="bottomRight"
+                                    arrow
+                                >
+                                    <Space
+                                        style={{
+                                            cursor: "pointer",
+                                            userSelect: "none",
+                                        }}
+                                    >
+                                        <Avatar
+                                            size="default"
+                                            // src="/assets/profile/avatar.png" // you can replace this with your image
+                                            icon={<UserOutlined />}
+                                        />
+                                        <div
+                                            style={{
+                                                display: "flex",
+                                                flexDirection: "column",
+                                                lineHeight: 1,
+                                            }}
+                                        >
+                                            <Text
+                                                strong
+                                                style={{ fontSize: 14 }}
+                                            >
+                                                Mahesa Rafiansyah
+                                            </Text>
+                                            <Text
+                                                type="secondary"
+                                                style={{
+                                                    fontSize: 12,
+                                                    marginTop: -6,
+                                                }}
+                                            >
+                                                08112345678
+                                            </Text>
+                                        </div>
+                                    </Space>
+                                </Dropdown>
                             </div>
                         </Card>
+                    </div>
 
-                        {/* Content Card */}
+                    {/* Scrollable Content */}
+                    <Content
+                        style={{
+                            flex: 1,
+                            overflowY: "auto", // scroll only here
+                            padding: "8px 0",
+                            scrollbarWidth: "none", // Firefox
+                            msOverflowStyle: "none", // IE/Edge
+                        }}
+                    >
                         <Card
                             style={{
                                 borderRadius: 12,
-                                minHeight: 400,
+                                minHeight: "100%",
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                                 background: "#fff",
                             }}
@@ -148,22 +250,37 @@ export default function ClientLayout({
                         >
                             {children}
                         </Card>
+                    </Content>
 
-                        {/* Footer Card */}
+                    {/* Footer */}
+                    <div style={{ padding: "6px 0 0" }}>
                         <Card
                             style={{
                                 borderRadius: 12,
+                                height: 30,
+                                fontSize: 10,
                                 textAlign: "center",
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                                 background: "#fff",
+                                marginTop: "auto",
+                                flexShrink: 0,
+                                display: "flex",
+                                alignItems: "center",
+                                justifyContent: "center",
                             }}
-                            styles={{ body: { padding: 16 } }}
+                            bodyStyle={{
+                                padding: 0,
+                            }}
                         >
-                            © 2025 My Dashboard
+                            <strong>
+                                © {new Date().getFullYear()} Rafiansyah
+                                Moneypulate
+                            </strong>
+                            . All Rights Reserved.
                         </Card>
-                    </Layout>
+                    </div>
                 </Layout>
-            </div>
+            </Layout>
         </ConfigProvider>
     );
 }

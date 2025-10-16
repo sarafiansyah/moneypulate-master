@@ -28,6 +28,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
                 `Score: ${target}\nRatio: ${((target / total) * 100).toFixed(
                     1
                 )}%`,
+            textFontSize: 0,
         },
         annotations: [
             {
