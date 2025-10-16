@@ -1,17 +1,33 @@
 "use client";
-import React from "react";
+import React, { useState } from "react";
 import { Pie } from "@ant-design/plots";
+import { Modal } from "antd";
 
-// ✅ Define the props type for flexibility
 interface PieChartProps {
     data: {
         type: string;
         value: number;
     }[];
-    title?: string; // optional title
+    title?: string;
 }
 
 const PieChart: React.FC<PieChartProps> = ({ data, title }) => {
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [selectedData, setSelectedData] = useState<{
+        type: string;
+        value: number;
+    } | null>(null);
+
+    const handleOpenModal = (datum: any) => {
+        setSelectedData(datum);
+        setIsModalOpen(true);
+    };
+
+    const handleCloseModal = () => {
+        setIsModalOpen(false);
+        setSelectedData(null);
+    };
+
     const config = {
         data,
         angleField: "value",
@@ -31,8 +47,14 @@ const PieChart: React.FC<PieChartProps> = ({ data, title }) => {
             style: { fontWeight: "bold" },
         },
         legend: {
-            color: { title: false, position: "bottom", rowPadding: 5 },
+            color: {
+                title: false,
+                position: "bottom",
+                rowPadding: 0,
+                fontSize: 10,
+            },
         },
+        height: 220,
         annotations: [
             {
                 type: "text",
@@ -41,14 +63,49 @@ const PieChart: React.FC<PieChartProps> = ({ data, title }) => {
                     x: "50%",
                     y: "50%",
                     textAlign: "center",
-                    fontSize: 40,
+                    fontSize: 1,
                     fontWeight: "bold",
+                    color: "#fff",
                 },
             },
         ],
+        // Correct AntV style for click handling
+        onReady: ({ chart }: any) => {
+            chart.on("interval:click", (e: any) => {
+                handleOpenModal(e.data?.data);
+            });
+            chart.on("element:click", (e: any) => {
+                handleOpenModal(e.data?.data);
+            });
+        },
     };
 
-    return <Pie {...config} />;
+    return (
+        <>
+            <Pie {...config} />
+
+            <Modal
+                title={`Details - ${selectedData?.type ?? "N/A"}`}
+                open={isModalOpen}
+                onCancel={handleCloseModal}
+                footer={null}
+                centered
+            >
+                {selectedData ? (
+                    <div style={{ textAlign: "center" }}>
+                        <p>
+                            <b>Type:</b> {selectedData.type}
+                        </p>
+                        <p>
+                            <b>Value:</b> {selectedData.value}
+                        </p>
+                    </div>
+                ) : (
+                    <p>No data selected.</p>
+                )}
+            </Modal>
+        </>
+    );
 };
 
 export default PieChart;
