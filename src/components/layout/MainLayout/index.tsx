@@ -22,6 +22,7 @@ import Image from "next/image";
 import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { menuItems } from "../MenuItems";
 import "antd/dist/reset.css";
+import "@ant-design/v5-patch-for-react-19";
 
 const { Header, Sider, Content, Footer } = Layout;
 const { Title, Text } = Typography;
@@ -268,9 +269,7 @@ export default function ClientLayout({
                                 alignItems: "center",
                                 justifyContent: "center",
                             }}
-                            bodyStyle={{
-                                padding: 0,
-                            }}
+                            styles={{ body: { padding: 0 } }}
                         >
                             <strong>
                                 © {new Date().getFullYear()} Rafiansyah

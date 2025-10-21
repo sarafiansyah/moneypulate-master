@@ -11,7 +11,12 @@ import {
     Upload,
     message,
     Row,
+    Typography,
+    InputNumber,
     Col,
+    Modal,
+    Select,
+    Form,
 } from "antd";
 import type { UploadFile, UploadProps } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -19,8 +24,21 @@ import { InboxOutlined, UploadOutlined } from "@ant-design/icons";
 import GaugeChart from "@/components/chart/GaugeChart";
 import PieChart from "@/components/chart/DonutChart";
 import ColumnChart from "@/components/chart/ColumnChart";
+import { useBalanceStore } from "@/store/useBalanceStore";
+import { useHeirloomStore, Heirloom } from "@/store/useHeirloomStore";
 
 const { Dragger } = Upload;
+const { Title, Text } = Typography;
+const { Option } = Select;
+const { confirm } = Modal;
+
+// interface Heirloom {
+//     key: string;
+//     name: string;
+//     type: string;
+//     price: number;
+//     date: string;
+// }
 
 // Pie chart data
 const dataSales = [
@@ -142,15 +160,132 @@ const columns: ColumnsType<UserRow> = [
     },
 ];
 
+const columnsHeirloom = [
+    {
+        title: "No",
+        key: "index",
+        width: 50, // fixed width for numbering
+        render: (_: any, __: any, index: number) => index + 1, // 1-based index
+    },
+    {
+        title: "Name",
+        dataIndex: "name",
+        key: "name",
+        width: 200, // you can adjust
+    },
+    {
+        title: "Price",
+        dataIndex: "price",
+        key: "price",
+        width: 100,
+        render: (val: number) => `$${val}`,
+    },
+];
+
 export default function Page() {
     const target = 150;
     const total = 400;
     const router = useRouter();
 
+    const { heirlooms, addHeirloom, editHeirloom, deleteHeirloom } =
+        useHeirloomStore();
+    const [name, setName] = useState("");
+    const [isModalOpen, setIsModalOpen] = useState(false);
+    const [editingItem, setEditingItem] = useState<Heirloom | null>(null);
+    const [price, setPrice] = useState<number>(0);
     const [data] = useState<UserRow[]>(initialData);
     const [search, setSearch] = useState("");
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
     const [fileList, setFileList] = useState<UploadFile[]>([]);
+    const { balance } = useBalanceStore();
+
+    const [form] = Form.useForm();
+
+    const openModal = (item?: Heirloom) => {
+        if (item) {
+            setEditingItem(item);
+            form.setFieldsValue(item);
+        } else {
+            setEditingItem(null);
+            form.resetFields();
+        }
+        setIsModalOpen(true);
+    };
+
+    const closeModal = () => {
+        setIsModalOpen(false);
+    };
+
+    const handleSave = () => {
+        form.validateFields().then((values) => {
+            const dateStr = new Date().toLocaleString();
+            if (editingItem) {
+                editHeirloom({ ...editingItem, ...values });
+            } else {
+                const newItem: Heirloom = {
+                    key: Date.now().toString(),
+                    ...values,
+                    date: dateStr,
+                };
+                addHeirloom(newItem);
+            }
+            closeModal();
+        });
+    };
+
+    const handleDelete = (key: string) => {
+        confirm({
+            title: "Are you sure you want to delete this heirloom?",
+            onOk() {
+                deleteHeirloom(key);
+            },
+            onCancel() {},
+        });
+    };
+    const columnsHeirloom = [
+        {
+            title: "#",
+            key: "index",
+            width: 50,
+            render: (_: any, __: any, index: number) => index + 1,
+        },
+        { title: "Name", dataIndex: "name", key: "name", width: 150 },
+        { title: "Type", dataIndex: "type", key: "type", width: 120 },
+        {
+            title: "Price",
+            dataIndex: "price",
+            key: "price",
+            width: 100,
+            render: (val: number) => `$${val}`,
+        },
+        { title: "Date", dataIndex: "date", key: "date", width: 180 },
+        {
+            title: "Action",
+            key: "action",
+            width: 150,
+            render: (_: any, record: Heirloom) => (
+                <Space>
+                    <Button size="small" onClick={() => openModal(record)}>
+                        Edit
+                    </Button>
+                    <Button
+                        size="small"
+                        danger
+                        onClick={() => {
+                            deleteHeirloom(record.key);
+                        }}
+                    >
+                        Delete
+                    </Button>
+                </Space>
+            ),
+        },
+    ];
+
+    const totalPrice = useMemo(
+        () => heirlooms.reduce((sum, item) => sum + item.price, 0),
+        [heirlooms]
+    );
 
     const filtered = useMemo(() => {
         if (!search.trim()) return data;
@@ -167,14 +302,6 @@ export default function Page() {
         selectedRowKeys,
         onChange: (keys: React.Key[]) => setSelectedRowKeys(keys),
     };
-
-    const getSpendingLevel = (value: number) => {
-        if (value < 100) return "Low Spending";
-        if (value < 200) return "Normal Spending";
-        if (value < 300) return "Average Spending";
-        return "High Spending";
-    };
-    const spendingLevel = getSpendingLevel(target);
 
     const props: UploadProps = {
         name: "file",
@@ -208,6 +335,21 @@ export default function Page() {
         },
         fileList,
     };
+    // calculate percentage spent
+    const spendingPercent = balance > 0 ? totalPrice / balance : 0;
+
+    // map to 0-400 range
+    const gaugeValue = Math.min(Math.max(spendingPercent * 400, 0), 400);
+
+    console.log("gagVal", gaugeValue);
+
+    const getSpendingLevel = (value: number) => {
+        if (value < 100) return "Low Spending";
+        if (value < 200) return "Normal Spending";
+        if (value < 300) return "Average Spending";
+        return "High Spending";
+    };
+    const spendingLevel = getSpendingLevel(gaugeValue);
 
     return (
         <main style={{ padding: "1rem" }}>
@@ -217,7 +359,7 @@ export default function Page() {
                     <Col xs={24} md={6} xl={6}>
                         <Card
                             title="Performance Gauge"
-                            bordered={false}
+                            variant="outlined"
                             style={{
                                 borderRadius: 16,
                                 height: 300,
@@ -240,7 +382,7 @@ export default function Page() {
                                     }}
                                 >
                                     <GaugeChart
-                                        target={target}
+                                        target={gaugeValue}
                                         total={total}
                                         title=""
                                     />
@@ -267,7 +409,10 @@ export default function Page() {
                                             fontSize: "0.85rem",
                                         }}
                                     >
-                                        Based on score: {target} / {total}
+                                        Based on score:{" "}
+                                        <span>
+                                            ${totalPrice}/${balance}
+                                        </span>
                                     </p>
                                 </div>
                             </div>
@@ -276,7 +421,17 @@ export default function Page() {
 
                     <Col xs={24} md={12} xl={12}>
                         <Card
-                            title="Heirloom List"
+                            title={
+                                <Space>
+                                    <Title level={4}>Heirloom List</Title>
+                                    <Button
+                                        type="primary"
+                                        onClick={() => openModal()}
+                                    >
+                                        Add Heirloom
+                                    </Button>
+                                </Space>
+                            }
                             style={{
                                 borderRadius: 12,
                                 height: 300,
@@ -286,20 +441,72 @@ export default function Page() {
                                 msOverflowStyle: "none", // IE/Edge
                             }}
                         >
-                            <Table<UserRow>
+                            {/* Add new heirloom */}
+                            <Table<Heirloom>
                                 size="small"
-                                columns={columns}
-                                dataSource={filtered.slice(0, 3)}
+                                columns={columnsHeirloom}
+                                dataSource={heirlooms}
                                 pagination={{ pageSize: 5 }}
-                                scroll={{ x: 600 }}
+                                scroll={{ x: 800 }}
                             />
+                            <Text strong>Total Price: ${totalPrice}</Text>
+
+                            {/* Modal for Add/Edit */}
+                            <Modal
+                                title={
+                                    editingItem
+                                        ? "Edit Heirloom"
+                                        : "Add Heirloom"
+                                }
+                                open={isModalOpen}
+                                onOk={handleSave}
+                                onCancel={closeModal}
+                                okText="Save"
+                            >
+                                <Form form={form} layout="vertical">
+                                    <Form.Item
+                                        name="name"
+                                        label="Name"
+                                        rules={[{ required: true }]}
+                                    >
+                                        <Input placeholder="Heirloom Name" />
+                                    </Form.Item>
+                                    <Form.Item
+                                        name="type"
+                                        label="Type"
+                                        rules={[{ required: true }]}
+                                    >
+                                        <Select placeholder="Select Type">
+                                            <Option value="Jewelry">
+                                                Jewelry
+                                            </Option>
+                                            <Option value="Art">Art</Option>
+                                            <Option value="Furniture">
+                                                Furniture
+                                            </Option>
+                                            <Option value="Other">Other</Option>
+                                        </Select>
+                                    </Form.Item>
+                                    <Form.Item
+                                        name="price"
+                                        label="Price"
+                                        rules={[{ required: true }]}
+                                    >
+                                        <InputNumber
+                                            placeholder="Price"
+                                            min={0}
+                                            style={{ width: "100%" }}
+                                        />
+                                    </Form.Item>
+                                </Form>
+                            </Modal>
                         </Card>
                     </Col>
 
                     <Col xs={24} md={6} xl={6}>
                         <Card
                             title="Category Breakdown"
-                            bordered={false}
+                            variant="outlined"
                             style={{
                                 borderRadius: 16,
                                 height: 300,
@@ -338,7 +545,7 @@ export default function Page() {
                     <Col xs={24} md={8} xl={8}>
                         <Card
                             title="Upload Files"
-                            bordered={false}
+                            variant="outlined"
                             extra={
                                 <Button
                                     type="default"
@@ -389,7 +596,7 @@ export default function Page() {
                     <Col xs={24} md={8} xl={8}>
                         <Card
                             title="Weekly Bank Comparison"
-                            bordered={false}
+                            variant="outlined"
                             style={{
                                 borderRadius: 16,
                                 height: 300,

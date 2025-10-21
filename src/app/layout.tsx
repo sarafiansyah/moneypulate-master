@@ -3,7 +3,7 @@ import ClientLayout from "@/components/layout/MainLayout";
 import AppLoadingOverlay from "@/app/layout-loading";
 
 export const metadata: Metadata = {
-    title: "Next.js + AntD Layout",
+    title: "Moneypulate - Financial Monitoring",
     description: "Modern Ant Design layout using Next.js App Router",
 };
 
