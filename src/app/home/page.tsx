@@ -18,10 +18,11 @@ import {
     Empty,
     Select,
     Form,
+    Tooltip,
 } from "antd";
 import type { UploadFile, UploadProps } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { InboxOutlined, UploadOutlined } from "@ant-design/icons";
+import { InboxOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
 import GaugeChart from "@/components/chart/GaugeChart";
 import PieChart from "@/components/chart/DonutChart";
 import ColumnChart from "@/components/chart/ColumnChart";
@@ -410,7 +411,8 @@ export default function Page() {
         fileList,
     };
     // calculate percentage spent
-    const spendingPercent = currentBalance > 0 ? totalPrice / currentBalance : 0;
+    const spendingPercent =
+        currentBalance > 0 ? totalPrice / currentBalance : 0;
 
     // map to 0-400 range
     const gaugeValue = Math.min(Math.max(spendingPercent * 400, 0), 400);
@@ -541,12 +543,56 @@ export default function Page() {
                                 >
                                     <Title
                                         level={5}
-                                        style={{ fontSize: "16px", margin: 0 }}
+                                        style={{
+                                            fontSize: "16px",
+                                            margin: 0,
+                                            fontWeight: "bold",
+                                        }}
                                     >
-                                        Heirloom List
+                                        Self Rewards{" "}
+                                        <Tooltip title="This is your current available balance">
+                                            <span
+                                                style={{
+                                                    color:
+                                                        currentBalance -
+                                                            totalPrice >=
+                                                        0
+                                                            ? "#0da84d"
+                                                            : "#ff4d4f", // green if positive, red if negative
+                                                }}
+                                            >
+                                                {currentBalance - totalPrice >=
+                                                0
+                                                    ? `+${new Intl.NumberFormat(
+                                                          "id-ID",
+                                                          {
+                                                              style: "currency",
+                                                              currency: "IDR",
+                                                              minimumFractionDigits: 0,
+                                                          }
+                                                      ).format(
+                                                          currentBalance -
+                                                              totalPrice
+                                                      )}`
+                                                    : `-${new Intl.NumberFormat(
+                                                          "id-ID",
+                                                          {
+                                                              style: "currency",
+                                                              currency: "IDR",
+                                                              minimumFractionDigits: 0,
+                                                          }
+                                                      ).format(
+                                                          Math.abs(
+                                                              currentBalance -
+                                                                  totalPrice
+                                                          )
+                                                      )}`}
+                                            </span>
+                                        </Tooltip>
                                     </Title>
                                     <Button
                                         type="primary"
+                                        icon={<PlusOutlined />}
                                         onClick={() => openModal()}
                                     >
                                         Add New

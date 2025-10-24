@@ -1,12 +1,23 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useMemo } from "react";
 import { useBalanceStore } from "@/store/useBalanceStore";
-import { Card, InputNumber, Button, Typography, Input, Row, Col } from "antd";
+import { useHeirloomStore, Heirloom } from "@/store/useHeirloomStore";
+import {
+    Card,
+    InputNumber,
+    Button,
+    Typography,
+    Input,
+    Row,
+    Col,
+    Modal,
+} from "antd";
 import {
     DeleteOutlined,
     EyeOutlined,
     EyeInvisibleOutlined,
+    EditOutlined,
 } from "@ant-design/icons";
 
 const { Title } = Typography;
@@ -20,12 +31,26 @@ export default function BalanceTracker() {
         addLimit,
         removeLimit,
         resetAll,
+        setTotalIncome,
+        editLimit,
+        setBalance,
     } = useBalanceStore();
 
     const [amount, setAmount] = useState<number>(0);
     const [limitTitle, setLimitTitle] = useState("");
     const [limitValue, setLimitValue] = useState<number>(0);
     const [showBalance, setShowBalance] = useState(true);
+    const [isEditModalOpen, setIsEditModalOpen] = useState(false);
+    const [editValue, setEditValue] = useState<number>(totalIncome);
+    const [isEditLimitModalOpen, setIsEditLimitModalOpen] = useState(false);
+    const [editingLimit, setEditingLimit] = useState<{
+        title: string;
+        value: number;
+    } | null>(null);
+    const [editLimitTitle, setEditLimitTitle] = useState("");
+    const [editLimitValue, setEditLimitValue] = useState(0);
+        const { heirlooms, addHeirloom, editHeirloom, deleteHeirloom } =
+            useHeirloomStore();
 
     const formatIDR = (value: number) =>
         new Intl.NumberFormat("id-ID", {
@@ -33,6 +58,29 @@ export default function BalanceTracker() {
             currency: "IDR",
             minimumFractionDigits: 0,
         }).format(value);
+
+    const totalPrice = useMemo(
+        () => heirlooms.reduce((sum, item) => sum + item.price, 0),
+        [heirlooms]
+    );
+
+    console.log("TOT", totalPrice)
+
+    const handleEditSave = () => {
+        if (!isNaN(editValue) && editValue >= 0) {
+            setTotalIncome(editValue);
+            setIsEditModalOpen(false);
+        }
+    };
+
+    const handleLimitEditSave = () => {
+        if (!editingLimit) return;
+        if (editLimitTitle && editLimitValue >= 0) {
+            editLimit(editingLimit.title, editLimitTitle, editLimitValue);
+            setIsEditLimitModalOpen(false);
+            setEditingLimit(null);
+        }
+    };
 
     return (
         <div
@@ -44,10 +92,10 @@ export default function BalanceTracker() {
             }}
         >
             <Row gutter={[24, 24]} wrap align="top">
-                {/* 🧮 Balance & Limits */}
+                {/* 💰 Balance & Limits */}
                 <Col xs={24} md={16}>
                     <Row gutter={[16, 16]}>
-                        {/* Total Income */}
+                        {/* 🧾 Initial Balance */}
                         <Col xs={24} sm={12}>
                             <Card
                                 title={
@@ -59,20 +107,32 @@ export default function BalanceTracker() {
                                             width: "100%",
                                         }}
                                     >
-                                        <span>Total Balance</span>
-                                        <Button
-                                            type="text"
-                                            icon={
-                                                showBalance ? (
-                                                    <EyeInvisibleOutlined />
-                                                ) : (
-                                                    <EyeOutlined />
-                                                )
-                                            }
-                                            onClick={() =>
-                                                setShowBalance(!showBalance)
-                                            }
-                                        />
+                                        <span>Initial Balance</span>
+                                        <div
+                                            style={{ display: "flex", gap: 8 }}
+                                        >
+                                            <Button
+                                                type="text"
+                                                icon={<EditOutlined />}
+                                                onClick={() => {
+                                                    setEditValue(totalIncome);
+                                                    setIsEditModalOpen(true);
+                                                }}
+                                            />
+                                            <Button
+                                                type="text"
+                                                icon={
+                                                    showBalance ? (
+                                                        <EyeInvisibleOutlined />
+                                                    ) : (
+                                                        <EyeOutlined />
+                                                    )
+                                                }
+                                                onClick={() =>
+                                                    setShowBalance(!showBalance)
+                                                }
+                                            />
+                                        </div>
                                     </div>
                                 }
                                 variant="borderless"
@@ -85,10 +145,12 @@ export default function BalanceTracker() {
                                     level={3}
                                     style={{
                                         background:
-                                            "linear-gradient(90deg, #007bff, #00c6ff)",
+                                            "linear-gradient(90deg, #585858ff, #979797ff)",
                                         WebkitBackgroundClip: "text",
                                         WebkitTextFillColor: "transparent",
                                         fontWeight: "bold",
+                                        fontSize: "clamp(10px, 3vw, 40px)",
+                                        transition: "font-size 0.2s ease",
                                     }}
                                 >
                                     {showBalance
@@ -98,14 +160,10 @@ export default function BalanceTracker() {
                             </Card>
                         </Col>
 
-                        {/* Final Balance */}
+                        {/* ✅ Final Balance */}
                         <Col xs={24} sm={12}>
                             <Card
-                            variant="borderless"
-                                style={{
-                                    borderRadius: 12,
-                                    boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
-                                }}
+                                variant="borderless"
                                 title={
                                     <div
                                         style={{
@@ -131,20 +189,51 @@ export default function BalanceTracker() {
                                         />
                                     </div>
                                 }
+                                style={{
+                                    borderRadius: 12,
+                                    boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+                                }}
                             >
                                 <Title
                                     level={3}
                                     style={{
                                         background:
-                                            "linear-gradient(90deg, #007bff, #00c6ff)",
+                                            "linear-gradient(90deg, #0da84dff, #19d90fff)",
                                         WebkitBackgroundClip: "text",
                                         WebkitTextFillColor: "transparent",
                                         fontWeight: "bold",
+                                        fontSize: "clamp(10px, 3vw, 40px)",
+                                        transition: "font-size 0.2s ease",
                                     }}
                                 >
                                     {showBalance
-                                        ? formatIDR(currentBalance)
+                                        ? formatIDR(currentBalance - totalPrice)
                                         : "•••••••"}
+                                </Title>
+                            </Card>
+                        </Col>
+
+                        <Col xs={24} sm={12} md={8} lg={6}>
+                            <Card
+                                size="small"
+                                variant="borderless"
+                                style={{
+                                    borderRadius: 10,
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+                                    position: "relative",
+                                }}
+                            >
+                                <Title level={5}>Self Rewards</Title>
+                                <Title
+                                    level={4}
+                                    style={{
+                                        background:
+                                            "linear-gradient(90deg, #0077ff, #00c6ff 85%)",
+                                        WebkitBackgroundClip: "text",
+                                        WebkitTextFillColor: "transparent",
+                                    }}
+                                >
+                                    {formatIDR(totalPrice)} {/* example value */}
                                 </Title>
                             </Card>
                         </Col>
@@ -154,7 +243,7 @@ export default function BalanceTracker() {
                             <Col xs={24} sm={12} md={8} lg={6} key={i}>
                                 <Card
                                     size="small"
-                                  variant="borderless"
+                                    variant="borderless"
                                     style={{
                                         borderRadius: 10,
                                         boxShadow:
@@ -162,6 +251,23 @@ export default function BalanceTracker() {
                                         position: "relative",
                                     }}
                                 >
+                                    <Button
+                                        type="text"
+                                        icon={<EditOutlined />}
+                                        size="small"
+                                        style={{
+                                            position: "absolute",
+                                            top: 4,
+                                            right: 28,
+                                        }}
+                                        onClick={() => {
+                                            setEditingLimit(card);
+                                            setEditLimitTitle(card.title);
+                                            setEditLimitValue(card.value);
+                                            setIsEditLimitModalOpen(true);
+                                        }}
+                                    />
+
                                     <Button
                                         type="text"
                                         icon={<DeleteOutlined />}
@@ -195,7 +301,7 @@ export default function BalanceTracker() {
                 {/* ⚙️ Controls */}
                 <Col xs={24} md={8}>
                     <Card
-                        title="⚙️ Manage Balance"
+                        title="Manage Balance"
                         style={{
                             marginBottom: 24,
                             borderRadius: 12,
@@ -229,7 +335,7 @@ export default function BalanceTracker() {
                     </Card>
 
                     <Card
-                        title="🎯 Add Limit"
+                        title="Add Limit"
                         style={{
                             borderRadius: 12,
                             boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
@@ -263,6 +369,44 @@ export default function BalanceTracker() {
                     </Card>
                 </Col>
             </Row>
+
+            {/* ✏️ Edit Modal */}
+            <Modal
+                title="Edit Initial Balance"
+                open={isEditModalOpen}
+                onCancel={() => setIsEditModalOpen(false)}
+                onOk={handleEditSave}
+                okText="Save"
+            >
+                <InputNumber
+                    min={0}
+                    value={editValue}
+                    onChange={(v) => setEditValue(Number(v))}
+                    style={{ width: "100%" }}
+                    placeholder="Enter new balance"
+                />
+            </Modal>
+            <Modal
+                title="Edit Limit"
+                open={isEditLimitModalOpen}
+                onCancel={() => setIsEditLimitModalOpen(false)}
+                onOk={handleLimitEditSave}
+                okText="Save"
+            >
+                <Input
+                    placeholder="Limit title"
+                    value={editLimitTitle}
+                    onChange={(e) => setEditLimitTitle(e.target.value)}
+                    style={{ marginBottom: 8, width: "100%" }}
+                />
+                <InputNumber
+                    placeholder="Limit value"
+                    min={0}
+                    value={editLimitValue}
+                    onChange={(v) => setEditLimitValue(Number(v))}
+                    style={{ width: "100%" }}
+                />
+            </Modal>
         </div>
     );
 }
