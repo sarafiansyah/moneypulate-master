@@ -21,6 +21,7 @@ import { useRouter, usePathname } from "next/navigation";
 import Image from "next/image";
 import { MenuFoldOutlined, MenuUnfoldOutlined } from "@ant-design/icons";
 import { menuItems } from "../MenuItems";
+import { useProfileStore } from "@/store/useProfileStore";
 import "antd/dist/reset.css";
 import "@ant-design/v5-patch-for-react-19";
 
@@ -35,6 +36,16 @@ export default function ClientLayout({
     const [collapsed, setCollapsed] = useState(false);
     const router = useRouter();
     const pathname = usePathname();
+    const {
+        firstName,
+        lastName,
+        username,
+        phoneNumber,
+        status,
+        joinedAt,
+        setProfile,
+        resetProfile,
+    } = useProfileStore();
 
     const handleLogoClick = () => {
         setCollapsed(!collapsed);
@@ -45,10 +56,16 @@ export default function ClientLayout({
         if (selected) router.push(selected.path);
     };
 
+    // 🔥 Add this
+    const currentMenu = menuItems.find((item) => item.path === pathname);
+    const pageTitle = currentMenu ? currentMenu.label : "Dashboard";
+
     return (
         <ConfigProvider
             theme={{
                 token: {
+                      colorText: "#5d5d5dff", // 🌈 global text color
+          colorTextHeading: "#595959ff", // headings
                     colorPrimary: "#21ba0aff",
                     fontFamily: "'Poppins', sans-serif",
                 },
@@ -150,9 +167,10 @@ export default function ClientLayout({
                                     alignItems: "center",
                                 }}
                             >
+                          
                                 {/* Left: Page Title */}
-                                <Title level={4} style={{ margin: 0 }}>
-                                    Dashboard
+                                <Title level={4} style={{ margin: 0, color:"#21ba0aff" }}>
+                                    {pageTitle}
                                 </Title>
 
                                 {/* Right: Profile Dropdown */}
@@ -212,7 +230,8 @@ export default function ClientLayout({
                                                 strong
                                                 style={{ fontSize: 14 }}
                                             >
-                                                Mahesa Rafiansyah
+                                                {firstName || "—"}{" "}
+                                                {lastName || ""}
                                             </Text>
                                             <Text
                                                 type="secondary"
@@ -221,7 +240,7 @@ export default function ClientLayout({
                                                     marginTop: -6,
                                                 }}
                                             >
-                                                08112345678
+                                                {phoneNumber || "—"}
                                             </Text>
                                         </div>
                                     </Space>
