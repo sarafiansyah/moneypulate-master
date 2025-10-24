@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useMemo, useState } from "react";
+import React, { useMemo, useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
 import {
     Card,
@@ -15,6 +15,7 @@ import {
     InputNumber,
     Col,
     Modal,
+    Empty,
     Select,
     Form,
 } from "antd";
@@ -40,11 +41,17 @@ const { confirm } = Modal;
 //     date: string;
 // }
 
+interface PieChartItem {
+    type: string;
+    value: number;
+    color: string;
+}
+
 // Pie chart data
 const dataSales = [
-    { type: "Electronics", value: 40, color: "#1890FF" },
-    { type: "Fashion", value: 25, color: "#52C41A" },
-    { type: "Home Goods", value: 15, color: "#FAAD14" },
+    { type: "Electronics", value: 10, color: "#1890FF" },
+    { type: "Fashion", value: 10, color: "#52C41A" },
+    { type: "Electronics", value: 10, color: "#FAAD14" },
     { type: "Sports", value: 10, color: "#EB2F96" },
     { type: "Cars", value: 10, color: "#2feb6eff" },
     { type: "Other", value: 10, color: "#13C2C2" },
@@ -182,6 +189,15 @@ const columnsHeirloom = [
     },
 ];
 
+const options = [
+    { value: "Electronics", label: "Electronics" },
+    { value: "Jewelry", label: "Jewelry" },
+    { value: "Foods", label: "Foods" },
+    { value: "Art", label: "Art" },
+    { value: "Furniture", label: "Furniture" },
+    { value: "Other", label: "Other" },
+];
+
 export default function Page() {
     const target = 150;
     const total = 400;
@@ -197,10 +213,63 @@ export default function Page() {
     const [search, setSearch] = useState("");
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
     const [fileList, setFileList] = useState<UploadFile[]>([]);
-    const { balance } = useBalanceStore();
+    const { currentBalance } = useBalanceStore();
+    const [pieChartData, setPieChartData] = useState<PieChartItem[]>([]);
 
     const [form] = Form.useForm();
 
+    const heirloomArray = Array.isArray(heirlooms) ? [...heirlooms] : [];
+    console.log("harland", heirloomArray);
+    heirloomArray.forEach((item) => console.log(item.name));
+
+    useEffect(() => {
+        if (!heirlooms || heirlooms.length === 0) {
+            setPieChartData([]);
+            return;
+        }
+
+        const groupedMap = new Map<string, number>();
+
+        heirlooms.forEach((item: any) => {
+            const typeKey = item.type ?? item.name ?? "Unknown";
+            const price = Number(item.price) || 0;
+
+            groupedMap.set(typeKey, (groupedMap.get(typeKey) || 0) + price);
+        });
+
+        const grouped = Array.from(groupedMap.entries()).map(
+            ([type, totalPrice]) => ({
+                type,
+                totalPrice,
+            })
+        );
+
+        const totalPrice = grouped.reduce((sum, g) => sum + g.totalPrice, 0);
+
+        // typed parameter
+        const colorFor = (str: string): string => {
+            let h = 0;
+            for (let i = 0; i < str.length; i++) {
+                h = (h << 5) - h + str.charCodeAt(i);
+                h |= 0;
+            }
+            const hex = (h >>> 0).toString(16).slice(0, 6).padStart(6, "0");
+            return `#${hex}`;
+        };
+
+        const mapped: PieChartItem[] = grouped.map((g) => ({
+            type: g.type,
+            value:
+                totalPrice === 0
+                    ? 0
+                    : Number(((g.totalPrice / totalPrice) * 100).toFixed(2)),
+            color: colorFor(g.type),
+        }));
+
+        setPieChartData(mapped);
+    }, [heirlooms]);
+
+    console.log("MAP", pieChartData);
     const openModal = (item?: Heirloom) => {
         if (item) {
             setEditingItem(item);
@@ -244,7 +313,7 @@ export default function Page() {
     };
     const columnsHeirloom = [
         {
-            title: "#",
+            title: "No",
             key: "index",
             width: 50,
             render: (_: any, __: any, index: number) => index + 1,
@@ -256,7 +325,12 @@ export default function Page() {
             dataIndex: "price",
             key: "price",
             width: 100,
-            render: (val: number) => `$${val}`,
+            render: (val: number) =>
+                new Intl.NumberFormat("id-ID", {
+                    style: "currency",
+                    currency: "IDR",
+                    minimumFractionDigits: 0,
+                }).format(val),
         },
         { title: "Date", dataIndex: "date", key: "date", width: 180 },
         {
@@ -336,7 +410,7 @@ export default function Page() {
         fileList,
     };
     // calculate percentage spent
-    const spendingPercent = balance > 0 ? totalPrice / balance : 0;
+    const spendingPercent = currentBalance > 0 ? totalPrice / currentBalance : 0;
 
     // map to 0-400 range
     const gaugeValue = Math.min(Math.max(spendingPercent * 400, 0), 400);
@@ -349,7 +423,23 @@ export default function Page() {
         if (value < 300) return "Average Spending";
         return "High Spending";
     };
+    const getSpendingColor = (level: string) => {
+        switch (level) {
+            case "Low Spending":
+                return "green"; // green
+            case "Normal Spending":
+                return "#f0e11bff"; // yellow
+            case "Average Spending":
+                return "#FAAD14"; // orange-ish
+            case "High Spending":
+                return "#F5222D"; // red
+            default:
+                return "#8C8C8C"; // gray fallback
+        }
+    };
+
     const spendingLevel = getSpendingLevel(gaugeValue);
+    const spendingColor = getSpendingColor(spendingLevel);
 
     return (
         <main style={{ padding: "1rem" }}>
@@ -391,14 +481,14 @@ export default function Page() {
                                 <div
                                     style={{
                                         textAlign: "center",
-                                        marginTop: "-50px",
+                                        marginTop: "-54px",
                                     }}
                                 >
                                     <h3
                                         style={{
-                                            fontSize: "1.25rem",
+                                            fontSize: "20px",
                                             fontWeight: 600,
-                                            color: "#189F4A",
+                                            color: spendingColor,
                                         }}
                                     >
                                         {spendingLevel}
@@ -406,12 +496,32 @@ export default function Page() {
                                     <p
                                         style={{
                                             color: "#777",
-                                            fontSize: "0.85rem",
+                                            fontSize: "12px",
+                                            marginTop: "-8px",
                                         }}
                                     >
-                                        Based on score:{" "}
+                                        <span>Based on Total</span>
+                                        <br />
+                                        <span
+                                            style={{
+                                                color:
+                                                    totalPrice > currentBalance
+                                                        ? "#F5222D"
+                                                        : "#434343ff", // 🔥 red if over, blue if within
+                                                fontWeight: 600,
+                                            }}
+                                        >
+                                            Rp.
+                                            {new Intl.NumberFormat(
+                                                "id-ID"
+                                            ).format(totalPrice)}
+                                        </span>
+                                        {" / "}
                                         <span>
-                                            ${totalPrice}/${balance}
+                                            Rp.
+                                            {new Intl.NumberFormat(
+                                                "id-ID"
+                                            ).format(currentBalance)}
                                         </span>
                                     </p>
                                 </div>
@@ -422,15 +532,26 @@ export default function Page() {
                     <Col xs={24} md={12} xl={12}>
                         <Card
                             title={
-                                <Space>
-                                    <Title level={4}>Heirloom List</Title>
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    <Title
+                                        level={5}
+                                        style={{ fontSize: "16px", margin: 0 }}
+                                    >
+                                        Heirloom List
+                                    </Title>
                                     <Button
                                         type="primary"
                                         onClick={() => openModal()}
                                     >
-                                        Add Heirloom
+                                        Add New
                                     </Button>
-                                </Space>
+                                </div>
                             }
                             style={{
                                 borderRadius: 12,
@@ -449,7 +570,12 @@ export default function Page() {
                                 pagination={{ pageSize: 5 }}
                                 scroll={{ x: 800 }}
                             />
-                            <Text strong>Total Price: ${totalPrice}</Text>
+                            <Text strong>
+                                Total Price: Rp.
+                                {new Intl.NumberFormat("id-ID").format(
+                                    totalPrice
+                                )}
+                            </Text>
 
                             {/* Modal for Add/Edit */}
                             <Modal
@@ -477,14 +603,14 @@ export default function Page() {
                                         rules={[{ required: true }]}
                                     >
                                         <Select placeholder="Select Type">
-                                            <Option value="Jewelry">
-                                                Jewelry
-                                            </Option>
-                                            <Option value="Art">Art</Option>
-                                            <Option value="Furniture">
-                                                Furniture
-                                            </Option>
-                                            <Option value="Other">Other</Option>
+                                            {options.map((opt) => (
+                                                <Option
+                                                    key={opt.value}
+                                                    value={opt.value}
+                                                >
+                                                    {opt.label}
+                                                </Option>
+                                            ))}
                                         </Select>
                                     </Form.Item>
                                     <Form.Item
@@ -513,8 +639,28 @@ export default function Page() {
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                             }}
                         >
-                            <div style={{ marginTop: -20 }}>
-                                <PieChart data={dataSales} title="Sales" />
+                            <div
+                                style={{
+                                    marginTop: -20,
+                                    height: "100%",
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                            >
+                                {pieChartData && pieChartData.length > 0 ? (
+                                    <PieChart
+                                        data={pieChartData}
+                                        title="SalesRetuynr"
+                                    />
+                                ) : (
+                                    <div style={{ marginTop: 30 }}>
+                                        <Empty
+                                            description="No data available"
+                                            image={Empty.PRESENTED_IMAGE_SIMPLE}
+                                        />
+                                    </div>
+                                )}
                             </div>
                         </Card>
                     </Col>

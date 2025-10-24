@@ -20,7 +20,7 @@ const GaugeChart: React.FC<GaugeChartProps> = ({
         data: { target, total, thresholds },
         scale: {
             color: {
-                range: ["#F4664A", "#F5E613", "#FAAD14", "green"],
+                range: ["green", "#F5E613", "#FAAD14", "#F4664A"],
             },
         },
         style: {
