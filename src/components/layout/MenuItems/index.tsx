@@ -3,6 +3,8 @@ import {
     UserOutlined,
     SettingOutlined,
     DollarOutlined,
+    GoldOutlined,
+    InfoCircleOutlined,
 } from "@ant-design/icons";
 import { AppMenuItem } from "./types";
 
@@ -27,6 +29,18 @@ export const menuItems: AppMenuItem[] = [
     },
     {
         key: "4",
+        icon: <GoldOutlined />,
+        label: "Heirlooms",
+        path: "/heirlooms",
+    },
+    {
+        key: "5",
+        icon: <InfoCircleOutlined />,
+        label: "About",
+        path: "/about",
+    },
+    {
+        key: "6",
         icon: <SettingOutlined />,
         label: "Settings",
         path: "/settings",
