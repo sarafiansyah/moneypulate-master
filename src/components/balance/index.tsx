@@ -39,7 +39,7 @@ export default function BalanceTracker() {
     const [amount, setAmount] = useState<number>(0);
     const [limitTitle, setLimitTitle] = useState("");
     const [limitValue, setLimitValue] = useState<number>(0);
-    const [showBalance, setShowBalance] = useState(true);
+    const [showBalance, setShowBalance] = useState(false);
     const [isEditModalOpen, setIsEditModalOpen] = useState(false);
     const [editValue, setEditValue] = useState<number>(totalIncome);
     const [isEditLimitModalOpen, setIsEditLimitModalOpen] = useState(false);
@@ -49,8 +49,8 @@ export default function BalanceTracker() {
     } | null>(null);
     const [editLimitTitle, setEditLimitTitle] = useState("");
     const [editLimitValue, setEditLimitValue] = useState(0);
-        const { heirlooms, addHeirloom, editHeirloom, deleteHeirloom } =
-            useHeirloomStore();
+    const { heirlooms, addHeirloom, editHeirloom, deleteHeirloom } =
+        useHeirloomStore();
 
     const formatIDR = (value: number) =>
         new Intl.NumberFormat("id-ID", {
@@ -64,7 +64,7 @@ export default function BalanceTracker() {
         [heirlooms]
     );
 
-    console.log("TOT", totalPrice)
+    console.log("TOT", totalPrice);
 
     const handleEditSave = () => {
         if (!isNaN(editValue) && editValue >= 0) {
@@ -86,7 +86,7 @@ export default function BalanceTracker() {
         <div
             style={{
                 width: "100%",
-                padding: "24px",
+                padding: "012px",
                 display: "flex",
                 flexDirection: "column",
             }}
@@ -233,7 +233,8 @@ export default function BalanceTracker() {
                                         WebkitTextFillColor: "transparent",
                                     }}
                                 >
-                                    {formatIDR(totalPrice)} {/* example value */}
+                                    {formatIDR(totalPrice)}{" "}
+                                    {/* example value */}
                                 </Title>
                             </Card>
                         </Col>

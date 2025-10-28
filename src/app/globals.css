@@ -25,3 +25,48 @@ body {
     color: var(--foreground);
     font-family: Arial, Helvetica, sans-serif;
 }
+#heirloom-table.ant-table-wrapper {
+    border: 1px solid #d9d9d9;
+    border-radius: 8px;
+    width: 90%;
+    margin: 0 auto;
+    font-size: 13px;
+}
+
+#heirloom-table .ant-table-thead > tr > th {
+    background: #fafafa;
+    font-weight: 600;
+    text-align: center;
+    border-color: #e8e8e8;
+}
+
+#heirloom-table .ant-table-tbody > tr > td {
+    border-color: #e8e8e8;
+    text-align: left;
+}
+
+#heirloom-table .ant-table {
+    border-radius: 8px;
+    overflow: hidden;
+}
+
+#heirloom-table .ant-table-tbody > tr:hover > td {
+    background: #f5f5f5 !important;
+    transition: background 0.2s ease;
+    /* }
+.reward-history-table.ant-table-wrapper {
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    width: 85%;
+    margin: 0 auto;
+    font-size: 10px; /* smaller global font */
+}
+
+/* globals.css or inside a CSS module with :global */
+.reward-history- .ant-card-body {
+    padding: 10px !important;
+}
+
+.heirlooms-card .ant-card-body {
+    padding: 12px !important;
+}

@@ -22,7 +22,20 @@ import {
 } from "antd";
 import type { UploadFile, UploadProps } from "antd";
 import type { ColumnsType } from "antd/es/table";
-import { InboxOutlined, PlusOutlined, UploadOutlined } from "@ant-design/icons";
+import {
+    DeleteOutlined,
+    DownloadOutlined,
+    EditOutlined,
+    FileExcelOutlined,
+    InboxOutlined,
+    InfoCircleOutlined,
+    PlusOutlined,
+    UploadOutlined,
+} from "@ant-design/icons";
+import jsPDF from "jspdf";
+import html2canvas from "html2canvas";
+import * as XLSX from "xlsx";
+import { saveAs } from "file-saver";
 import GaugeChart from "@/components/chart/GaugeChart";
 import PieChart from "@/components/chart/DonutChart";
 import ColumnChart from "@/components/chart/ColumnChart";
@@ -32,7 +45,7 @@ import { useHeirloomStore, Heirloom } from "@/store/useHeirloomStore";
 const { Dragger } = Upload;
 const { Title, Text } = Typography;
 const { Option } = Select;
-const { confirm } = Modal;
+const { confirm, success } = Modal;
 
 // interface Heirloom {
 //     key: string;
@@ -84,6 +97,15 @@ interface UserRow {
     email: string;
     city: string;
     income: number;
+}
+
+interface RewardHistoryRow {
+    key: string;
+    no: number;
+    name: string;
+    type: string;
+    price: number;
+    date: string;
 }
 
 const initialData: UserRow[] = [
@@ -168,6 +190,67 @@ const columns: ColumnsType<UserRow> = [
     },
 ];
 
+const columnsRewardHistory: ColumnsType<RewardHistoryRow> = [
+    {
+        title: "No",
+        dataIndex: "no",
+        key: "no",
+        width: 1,
+        align: "center", // this handles header & cell alignment
+        render: (val) => <div style={{ textAlign: "center" }}>{val}</div>, // optional extra control
+    },
+    {
+        title: "Name",
+        dataIndex: "name",
+        key: "name",
+        width: 80, // enough for most names
+        align: "left",
+        sorter: (a, b) => a.name.localeCompare(b.name),
+    },
+    {
+        title: "Type",
+        dataIndex: "type",
+        key: "type",
+        width: 60, // compact for type dropdown
+        align: "center",
+        filters: [
+            { text: "Foods", value: "Foods" },
+            { text: "Electronics", value: "Electronics" },
+            { text: "Furniture", value: "Furniture" },
+        ],
+        onFilter: (value, record) => record.type === value,
+    },
+    {
+        title: "Price",
+        dataIndex: "price",
+        key: "price",
+        width: 80, // slightly bigger for readability
+        align: "right",
+        sorter: (a, b) => a.price - b.price,
+        render: (val: number) =>
+            new Intl.NumberFormat("id-ID", {
+                style: "currency",
+                currency: "IDR",
+                maximumFractionDigits: 0,
+            }).format(val),
+    },
+    {
+        title: "Date",
+        dataIndex: "date",
+        key: "date",
+        width: 100, // a bit wider for readability
+        align: "center",
+        sorter: (a, b) =>
+            new Date(a.date).getTime() - new Date(b.date).getTime(),
+        render: (val: string | Date) =>
+            new Date(val).toLocaleDateString("id-ID", {
+                day: "2-digit",
+                month: "2-digit",
+                year: "numeric",
+            }),
+    },
+];
+
 const columnsHeirloom = [
     {
         title: "No",
@@ -216,8 +299,12 @@ export default function Page() {
     const [fileList, setFileList] = useState<UploadFile[]>([]);
     const { currentBalance } = useBalanceStore();
     const [pieChartData, setPieChartData] = useState<PieChartItem[]>([]);
-
+    const [transactionData, setTransactionData] =
+        useState<UserRow[]>(initialData);
     const [form] = Form.useForm();
+    const [rewardHistoryData, setRewardHistoryData] = useState<
+        RewardHistoryRow[]
+    >([]);
 
     const heirloomArray = Array.isArray(heirlooms) ? [...heirlooms] : [];
     console.log("harland", heirloomArray);
@@ -316,16 +403,17 @@ export default function Page() {
         {
             title: "No",
             key: "index",
-            width: 50,
+            width: 30,
+            align: "center" as "center", //  type-safe literal
             render: (_: any, __: any, index: number) => index + 1,
         },
-        { title: "Name", dataIndex: "name", key: "name", width: 150 },
-        { title: "Type", dataIndex: "type", key: "type", width: 120 },
+        { title: "Name", dataIndex: "name", key: "name", width: 110 },
+        { title: "Type", dataIndex: "type", key: "type", width: 80 },
         {
             title: "Price",
             dataIndex: "price",
             key: "price",
-            width: 100,
+            width: 90,
             render: (val: number) =>
                 new Intl.NumberFormat("id-ID", {
                     style: "currency",
@@ -333,25 +421,47 @@ export default function Page() {
                     minimumFractionDigits: 0,
                 }).format(val),
         },
-        { title: "Date", dataIndex: "date", key: "date", width: 180 },
+        {
+            title: "Date",
+            dataIndex: "date",
+            key: "date",
+            width: 110,
+            align: "left" as "left",
+            render: (val: string | Date) => {
+                const d = new Date(val);
+                const hours = String(d.getHours()).padStart(2, "0");
+                const minutes = String(d.getMinutes()).padStart(2, "0");
+                const seconds = String(d.getSeconds()).padStart(2, "0");
+                const day = String(d.getDate()).padStart(2, "0");
+                const month = String(d.getMonth() + 1).padStart(2, "0");
+                const year = d.getFullYear();
+                return `${day}-${month}-${year} ${hours}:${minutes}:${seconds}`; // 24h format
+            },
+        },
         {
             title: "Action",
             key: "action",
-            width: 150,
+            width: 50,
+            align: "center" as "center",
+            fixed: "right" as "right", //  right-aligned
             render: (_: any, record: Heirloom) => (
                 <Space>
-                    <Button size="small" onClick={() => openModal(record)}>
-                        Edit
-                    </Button>
                     <Button
                         size="small"
+                        type="primary"
+                        variant="solid"
+                        color="orange"
+                        icon={<EditOutlined />}
+                        onClick={() => openModal(record)}
+                    ></Button>
+                    <Button
+                        size="small"
+                        type="primary"
+                        variant="solid"
                         danger
-                        onClick={() => {
-                            deleteHeirloom(record.key);
-                        }}
-                    >
-                        Delete
-                    </Button>
+                        icon={<DeleteOutlined />}
+                        onClick={() => deleteHeirloom(record.key)}
+                    ></Button>
                 </Space>
             ),
         },
@@ -385,16 +495,22 @@ export default function Page() {
             const isAllowedType =
                 file.type === "image/png" ||
                 file.type === "image/jpeg" ||
-                file.type === "application/pdf";
+                file.type === "application/pdf" ||
+                file.type === "application/vnd.ms-excel" || // .xls
+                file.type ===
+                    "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet"; // .xlsx
+
             if (!isAllowedType) {
                 message.error(`${file.name} is not a valid file type.`);
                 return Upload.LIST_IGNORE;
             }
+
             const isLt5M = file.size / 1024 / 1024 < 5;
             if (!isLt5M) {
                 message.error(`${file.name} exceeds 5MB limit.`);
                 return Upload.LIST_IGNORE;
             }
+
             return true;
         },
         onChange(info) {
@@ -410,6 +526,7 @@ export default function Page() {
         },
         fileList,
     };
+
     // calculate percentage spent
     const spendingPercent =
         currentBalance > 0 ? totalPrice / currentBalance : 0;
@@ -442,6 +559,124 @@ export default function Page() {
 
     const spendingLevel = getSpendingLevel(gaugeValue);
     const spendingColor = getSpendingColor(spendingLevel);
+
+    const downloadPDF = async () => {
+        const tableElement = document.getElementById("heirloom-table");
+
+        if (!tableElement) {
+            message.error("Table not found!");
+            return;
+        }
+
+        const canvas = await html2canvas(tableElement, { scale: 2 });
+        const imgData = canvas.toDataURL("image/png");
+
+        const pdf = new jsPDF({
+            orientation: "portrait",
+            unit: "mm",
+            format: "a4",
+        });
+
+        const pageWidth = pdf.internal.pageSize.getWidth();
+        const pageHeight = pdf.internal.pageSize.getHeight();
+        const imgProps = pdf.getImageProperties(imgData);
+        const imgHeight = (imgProps.height * pageWidth) / imgProps.width;
+
+        let y = 10; // top margin
+        pdf.addImage(imgData, "PNG", 0, y, pageWidth, imgHeight);
+
+        pdf.save("Self_Rewards.pdf");
+    };
+
+    const downloadExcel = () => {
+        if (!heirlooms || heirlooms.length === 0) {
+            message.error("no data to export!");
+            return;
+        }
+
+        // Convert data to worksheet
+        const data = heirlooms.map((item, index) => ({
+            no: index + 1,
+            name: item.name,
+            type: item.type,
+            price: item.price,
+            date: item.date,
+        }));
+
+        const worksheet = XLSX.utils.json_to_sheet(data);
+        const workbook = XLSX.utils.book_new();
+        XLSX.utils.book_append_sheet(workbook, worksheet, "self rewards");
+
+        // Create timestamp
+        const now = new Date();
+        const datetime =
+            now.getFullYear().toString() +
+            ("0" + (now.getMonth() + 1)).slice(-2) +
+            ("0" + now.getDate()).slice(-2) +
+            "_" +
+            ("0" + now.getHours()).slice(-2) +
+            ("0" + now.getMinutes()).slice(-2) +
+            ("0" + now.getSeconds()).slice(-2);
+
+        // Generate Excel file
+        const excelBuffer = XLSX.write(workbook, {
+            bookType: "xlsx",
+            type: "array",
+        });
+
+        const blob = new Blob([excelBuffer], {
+            type: "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+        });
+
+        saveAs(blob, `self_rewards_${datetime}.xlsx`);
+    };
+
+    const handleExcelUpload = (info: any) => {
+        const file = info.file.originFileObj || info.file; // fallback
+
+        if (!(file instanceof Blob)) {
+            message.error("Please upload a valid Excel file (.xlsx or .xls).");
+            return;
+        }
+
+        const reader = new FileReader();
+
+        reader.onload = (e: ProgressEvent<FileReader>) => {
+            try {
+                const data = new Uint8Array(e.target?.result as ArrayBuffer);
+                const workbook = XLSX.read(data, { type: "array" });
+
+                const sheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[sheetName];
+
+                const jsonData = XLSX.utils.sheet_to_json(worksheet, {
+                    defval: "",
+                });
+
+                const parsedData = (jsonData as any[]).map((item, index) => ({
+                    key: `${Date.now()}-${index}`,
+                    no: item.no ?? item.No ?? index + 1,
+                    name: item.name ?? item.Name ?? "",
+                    type: item.type ?? item.Type ?? "",
+                    price: Number(item.price ?? item.Price ?? 0),
+                    date: item.date ?? item.Date ?? "",
+                }));
+
+                setRewardHistoryData(parsedData);
+                success({
+                    title: "Successfully Imported",
+                    content: `Imported ${parsedData.length} records from Excel`,
+                });
+            } catch (err) {
+                console.error(err);
+                message.error(
+                    "Failed to parse Excel file. Please check the format."
+                );
+            }
+        };
+
+        reader.readAsArrayBuffer(file);
+    };
 
     return (
         <main style={{ padding: "1rem" }}>
@@ -533,6 +768,7 @@ export default function Page() {
 
                     <Col xs={24} md={12} xl={12}>
                         <Card
+                            className="heirlooms-card"
                             title={
                                 <div
                                     style={{
@@ -590,13 +826,34 @@ export default function Page() {
                                             </span>
                                         </Tooltip>
                                     </Title>
-                                    <Button
-                                        type="primary"
-                                        icon={<PlusOutlined />}
-                                        onClick={() => openModal()}
-                                    >
-                                        Add New
-                                    </Button>
+                                    <Space>
+                                        <Tooltip title="Details">
+                                            <Button
+                                                type="primary"
+                                                icon={<InfoCircleOutlined />}
+                                                onClick={() =>
+                                                    router.push("/heirlooms")
+                                                }
+                                            ></Button>
+                                        </Tooltip>
+                                        <Tooltip title="Download Excel">
+                                            <Button
+                                                type="primary"
+                                                icon={<DownloadOutlined />}
+                                                onClick={downloadExcel}
+                                            ></Button>
+                                        </Tooltip>
+
+                                        <Tooltip title="Add New Heirlooms">
+                                            <Button
+                                                type="primary"
+                                                icon={<PlusOutlined />}
+                                                onClick={() => openModal()}
+                                            >
+                                                Add
+                                            </Button>
+                                        </Tooltip>
+                                    </Space>
                                 </div>
                             }
                             style={{
@@ -610,18 +867,47 @@ export default function Page() {
                         >
                             {/* Add new heirloom */}
                             <Table<Heirloom>
+                                id="heirloom-table"
                                 size="small"
                                 columns={columnsHeirloom}
                                 dataSource={heirlooms}
                                 pagination={{ pageSize: 5 }}
                                 scroll={{ x: 800 }}
+                                bordered
+                                summary={(pageData) => {
+                                    let totalPrice = 0;
+                                    pageData.forEach(({ price }) => {
+                                        totalPrice += price;
+                                    });
+
+                                    return (
+                                        <Table.Summary.Row
+                                            style={{
+                                                backgroundColor: "#FAFAFA",
+                                            }}
+                                        >
+                                            <Table.Summary.Cell
+                                                index={1}
+                                                colSpan={
+                                                    columnsHeirloom.length - 1
+                                                }
+                                            >
+                                                <div
+                                                    style={{
+                                                        fontWeight: "bold",
+                                                        color: "#555",
+                                                    }}
+                                                >
+                                                    Total Price: Rp.{" "}
+                                                    {new Intl.NumberFormat(
+                                                        "id-ID"
+                                                    ).format(totalPrice)}
+                                                </div>
+                                            </Table.Summary.Cell>
+                                        </Table.Summary.Row>
+                                    );
+                                }}
                             />
-                            <Text strong>
-                                Total Price: Rp.
-                                {new Intl.NumberFormat("id-ID").format(
-                                    totalPrice
-                                )}
-                            </Text>
 
                             {/* Modal for Add/Edit */}
                             <Modal
@@ -714,8 +1000,10 @@ export default function Page() {
                     {/* BOTTOM SECTION */}
                     <Col xs={24} md={8} xl={8}>
                         <Card
+                            className="reward-history-"
                             title="Transaction History"
                             style={{
+                                padding: 0,
                                 borderRadius: 16,
                                 height: 300,
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
@@ -724,12 +1012,52 @@ export default function Page() {
                                 msOverflowStyle: "none", // IE/Edge
                             }}
                         >
-                            <Table<UserRow>
+                            <Table<RewardHistoryRow>
+                                className="reward-history-table"
                                 size="small"
-                                columns={columns}
-                                dataSource={filtered}
+                                columns={columnsRewardHistory}
+                                dataSource={rewardHistoryData}
                                 pagination={{ pageSize: 4 }}
-                                scroll={{ x: 600 }}
+                                scroll={{ x: 0 }}
+                                locale={{
+                                    emptyText: "No rewards uploaded yet",
+                                }}
+                                bordered
+                                style={{
+                                    fontSize: "10px", // smaller global font
+
+                                    borderRadius: 6,
+                                    overflow: "hidden",
+                                }}
+                                rowClassName={() => "reward-history-row"}
+                                // force header style
+                                components={{
+                                    header: {
+                                        cell: (props: any) => (
+                                            <th
+                                                {...props}
+                                                style={{
+                                                    padding: "4px 6px",
+                                                    fontSize: "10px",
+                                                    fontWeight: 600,
+                                                    borderColor: "#e8e8e8",
+                                                }}
+                                            />
+                                        ),
+                                    },
+                                    body: {
+                                        cell: (props: any) => (
+                                            <td
+                                                {...props}
+                                                style={{
+                                                    padding: "2px 6px",
+                                                    fontSize: "10px",
+                                                    borderColor: "#e8e8e8",
+                                                }}
+                                            />
+                                        ),
+                                    },
+                                }}
                             />
                         </Card>
                     </Col>
@@ -752,36 +1080,87 @@ export default function Page() {
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                             }}
                         >
-                            <div style={{ height: 160 }}>
-                                <Dragger
-                                    {...props}
-                                    style={{ borderRadius: 12 }}
+                            <Space
+                                direction="vertical"
+                                align="center"
+                                size="large"
+                                style={{ width: "100%" }}
+                            >
+                                <div
+                                    style={{
+                                        background: "#defbeaff",
+                                        padding: 12,
+                                        borderRadius: "50%",
+                                        display: "flex",
+                                        justifyContent: "center",
+                                        alignItems: "center",
+
+                                        boxShadow: "0 4px 10px #1890ff26",
+                                        transition: "0.3s ease",
+                                    }}
                                 >
-                                    <p className="ant-upload-drag-icon">
-                                        <InboxOutlined />
-                                    </p>
-                                    <p className="ant-upload-text">
-                                        Click or drag files to upload
-                                    </p>
-                                    <p className="ant-upload-hint">
-                                        Supports PNG, JPG, or PDF. Max 5MB.
-                                    </p>
-                                </Dragger>
-                            </div>
-                            <div style={{ marginTop: 10, textAlign: "center" }}>
-                                <Button
-                                    type="primary"
-                                    icon={<UploadOutlined />}
-                                    disabled={fileList.length === 0}
-                                    onClick={() =>
-                                        message.success(
-                                            "Simulated upload success!"
-                                        )
-                                    }
+                                    <FileExcelOutlined
+                                        style={{
+                                            fontSize: 36,
+                                            color: "#0da84d",
+                                        }}
+                                    />
+                                </div>
+
+                                <Title
+                                    level={5}
+                                    style={{
+                                        marginTop: -10,
+                                        fontWeight: 600,
+                                        letterSpacing: 0.3,
+                                    }}
                                 >
-                                    Upload Now
-                                </Button>
-                            </div>
+                                    Upload Excel File
+                                </Title>
+
+                                <Text
+                                    type="secondary"
+                                    style={{
+                                        fontSize: 13,
+                                        marginTop: -30,
+                                        display: "flex",
+                                    }}
+                                >
+                                    Import data to update the Transaction
+                                    History table.
+                                </Text>
+
+                                <Upload
+                                    accept=".xlsx,.xls"
+                                    showUploadList={false}
+                                    beforeUpload={() => false}
+                                    onChange={handleExcelUpload}
+                                    style={{
+                                        color: "#999",
+                                        marginTop: -10,
+                                        display: "flex",
+                                    }}
+                                >
+                                    <Button
+                                        type="primary"
+                                        icon={<UploadOutlined />}
+                                        size="middle"
+                                    >
+                                        Choose Excel File
+                                    </Button>
+                                </Upload>
+
+                                <Text
+                                    style={{
+                                        fontSize: 12,
+                                        color: "#999",
+                                        marginTop: -20,
+                                        display: "flex",
+                                    }}
+                                >
+                                    Supported formats: .xlsx, .xls
+                                </Text>
+                            </Space>
                         </Card>
                     </Col>
 
