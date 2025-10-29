@@ -5,44 +5,50 @@ import {
     DollarOutlined,
     GoldOutlined,
     InfoCircleOutlined,
+    ReadOutlined,
 } from "@ant-design/icons";
 import { AppMenuItem } from "./types";
 
-export const menuItems: AppMenuItem[] = [
+const baseMenuItems = [
     {
-        key: "1",
         icon: <HomeOutlined />,
         label: "Home",
         path: "/home",
     },
     {
-        key: "2",
         icon: <DollarOutlined />,
         label: "Balance",
         path: "/balance",
     },
     {
-        key: "3",
         icon: <UserOutlined />,
         label: "Profile",
         path: "/profile",
     },
     {
-        key: "4",
         icon: <GoldOutlined />,
         label: "Heirlooms",
         path: "/heirlooms",
     },
     {
-        key: "5",
+        icon: <ReadOutlined />,
+        label: "Transactions",
+        path: "/transaction-history",
+    },
+    {
         icon: <InfoCircleOutlined />,
         label: "About",
         path: "/about",
     },
     {
-        key: "6",
         icon: <SettingOutlined />,
         label: "Settings",
         path: "/settings",
     },
 ];
+
+// Assign keys dynamically (starting from 1)
+export const menuItems: AppMenuItem[] = baseMenuItems.map((item, index) => ({
+    ...item,
+    key: (index + 1).toString(),
+}));

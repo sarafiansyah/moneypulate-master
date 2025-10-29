@@ -33,7 +33,7 @@ const ColumnChart: React.FC<ColumnChartProps> = ({
         columnStyle: {
             radius: [5, 5, 0, 0],
         },
-        legend: { position: "top" },
+        legend: false,
         autoFit: true,
         height: 230,
     };

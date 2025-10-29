@@ -41,6 +41,7 @@ import PieChart from "@/components/chart/DonutChart";
 import ColumnChart from "@/components/chart/ColumnChart";
 import { useBalanceStore } from "@/store/useBalanceStore";
 import { useHeirloomStore, Heirloom } from "@/store/useHeirloomStore";
+import { useRewardHistoryStore } from "@/store/useRewardHistoryStore";
 
 const { Dragger } = Upload;
 const { Title, Text } = Typography;
@@ -196,29 +197,18 @@ const columnsRewardHistory: ColumnsType<RewardHistoryRow> = [
         dataIndex: "no",
         key: "no",
         width: 1,
-        align: "center", // this handles header & cell alignment
-        render: (val) => <div style={{ textAlign: "center" }}>{val}</div>, // optional extra control
+        align: "center",
+        render: (_: any, __: any, index: number) => (
+            <div style={{ textAlign: "center" }}>{index + 1}</div>
+        ),
     },
     {
         title: "Name",
         dataIndex: "name",
         key: "name",
-        width: 80, // enough for most names
+        width: 100, // enough for most names
         align: "left",
         sorter: (a, b) => a.name.localeCompare(b.name),
-    },
-    {
-        title: "Type",
-        dataIndex: "type",
-        key: "type",
-        width: 60, // compact for type dropdown
-        align: "center",
-        filters: [
-            { text: "Foods", value: "Foods" },
-            { text: "Electronics", value: "Electronics" },
-            { text: "Furniture", value: "Furniture" },
-        ],
-        onFilter: (value, record) => record.type === value,
     },
     {
         title: "Price",
@@ -238,7 +228,7 @@ const columnsRewardHistory: ColumnsType<RewardHistoryRow> = [
         title: "Date",
         dataIndex: "date",
         key: "date",
-        width: 100, // a bit wider for readability
+        width: 80, // a bit wider for readability
         align: "center",
         sorter: (a, b) =>
             new Date(a.date).getTime() - new Date(b.date).getTime(),
@@ -302,9 +292,10 @@ export default function Page() {
     const [transactionData, setTransactionData] =
         useState<UserRow[]>(initialData);
     const [form] = Form.useForm();
-    const [rewardHistoryData, setRewardHistoryData] = useState<
-        RewardHistoryRow[]
-    >([]);
+    const rewardHistoryData = useRewardHistoryStore(
+        (state) => state.rewardHistoryData
+    );
+    const { clearRewardHistoryData } = useRewardHistoryStore();
 
     const heirloomArray = Array.isArray(heirlooms) ? [...heirlooms] : [];
     console.log("harland", heirloomArray);
@@ -632,7 +623,9 @@ export default function Page() {
     };
 
     const handleExcelUpload = (info: any) => {
-        const file = info.file.originFileObj || info.file; // fallback
+        const { rewardHistoryData, setRewardHistoryData } =
+            useRewardHistoryStore.getState();
+        const file = info.file.originFileObj || info.file;
 
         if (!(file instanceof Blob)) {
             message.error("Please upload a valid Excel file (.xlsx or .xls).");
@@ -645,7 +638,6 @@ export default function Page() {
             try {
                 const data = new Uint8Array(e.target?.result as ArrayBuffer);
                 const workbook = XLSX.read(data, { type: "array" });
-
                 const sheetName = workbook.SheetNames[0];
                 const worksheet = workbook.Sheets[sheetName];
 
@@ -662,10 +654,32 @@ export default function Page() {
                     date: item.date ?? item.Date ?? "",
                 }));
 
-                setRewardHistoryData(parsedData);
+                // Filter: keep only *new* rows not already in Zustand
+                const isDuplicate = (a: any, b: any) =>
+                    a.name === b.name &&
+                    a.type === b.type &&
+                    a.price === b.price &&
+                    a.date === b.date;
+
+                const newUniqueData = parsedData.filter(
+                    (newItem) =>
+                        !rewardHistoryData.some((oldItem) =>
+                            isDuplicate(newItem, oldItem)
+                        )
+                );
+
+                if (newUniqueData.length === 0) {
+                    message.info("No new unique records found to add.");
+                    return;
+                }
+
+                const mergedData = [...rewardHistoryData, ...newUniqueData];
+
+                setRewardHistoryData(mergedData);
+
                 success({
-                    title: "Successfully Imported",
-                    content: `Imported ${parsedData.length} records from Excel`,
+                    title: "Data Updated",
+                    content: `Added ${newUniqueData.length} new unique record(s).`,
                 });
             } catch (err) {
                 console.error(err);
@@ -677,6 +691,53 @@ export default function Page() {
 
         reader.readAsArrayBuffer(file);
     };
+
+    const handleClearData = () => {
+        Modal.confirm({
+            title: "Clear all reward history data?",
+            content: "This action cannot be undone.",
+            okText: "Yes, clear it",
+            cancelText: "Cancel",
+            okType: "danger",
+            onOk: () => {
+                clearRewardHistoryData();
+                localStorage.removeItem("reward-history-storage"); // just to be extra sure
+            },
+        });
+    };
+
+    // transform rewardHistoryData → chart data
+    const monthNames = [
+        "Jan",
+        "Feb",
+        "Mar",
+        "Apr",
+        "May",
+        "Jun",
+        "Jul",
+        "Aug",
+        "Sep",
+        "Oct",
+        "Nov",
+        "Dec",
+    ];
+
+    const dataColumns = monthNames.map((month, index) => {
+        // filter all data that belongs to this month
+        const total = rewardHistoryData
+            .filter((item) => {
+                if (!item.date) return false;
+                const itemMonth = new Date(item.date).getMonth(); // 0–11
+                return itemMonth === index;
+            })
+            .reduce((sum, item) => sum + (item.price || 0), 0);
+
+        return {
+            name: "Total Reward",
+            month,
+            value: total,
+        };
+    });
 
     return (
         <main style={{ padding: "1rem" }}>
@@ -1001,7 +1062,52 @@ export default function Page() {
                     <Col xs={24} md={8} xl={8}>
                         <Card
                             className="reward-history-"
-                            title="Transaction History"
+                            title={
+                                <div
+                                    style={{
+                                        display: "flex",
+                                        justifyContent: "space-between",
+                                        alignItems: "center",
+                                    }}
+                                >
+                                    <Title
+                                        level={5}
+                                        style={{
+                                            fontSize: "16px",
+                                            margin: 0,
+                                            fontWeight: "bold",
+                                        }}
+                                    >
+                                        Transaction History
+                                    </Title>
+                                    <Space>
+                                        <Tooltip title="Details">
+                                            <Button
+                                                type="primary"
+                                                icon={<InfoCircleOutlined />}
+                                                onClick={() =>
+                                                    router.push("/heirlooms")
+                                                }
+                                            ></Button>
+                                        </Tooltip>
+                                        <Tooltip title="Clear Data">
+                                            <Button
+                                                type="primary"
+                                                danger
+                                                icon={<DeleteOutlined />}
+                                                onClick={handleClearData}
+                                            ></Button>
+                                        </Tooltip>
+                                        <Tooltip title="Download Excel">
+                                            <Button
+                                                type="primary"
+                                                icon={<DownloadOutlined />}
+                                                onClick={downloadExcel}
+                                            ></Button>
+                                        </Tooltip>
+                                    </Space>
+                                </div>
+                            }
                             style={{
                                 padding: 0,
                                 borderRadius: 16,
@@ -1017,20 +1123,18 @@ export default function Page() {
                                 size="small"
                                 columns={columnsRewardHistory}
                                 dataSource={rewardHistoryData}
-                                pagination={{ pageSize: 4 }}
+                                pagination={{ pageSize: 10 }}
                                 scroll={{ x: 0 }}
                                 locale={{
                                     emptyText: "No rewards uploaded yet",
                                 }}
                                 bordered
                                 style={{
-                                    fontSize: "10px", // smaller global font
-
+                                    fontSize: "10px",
                                     borderRadius: 6,
                                     overflow: "hidden",
                                 }}
                                 rowClassName={() => "reward-history-row"}
-                                // force header style
                                 components={{
                                     header: {
                                         cell: (props: any) => (
@@ -1166,7 +1270,7 @@ export default function Page() {
 
                     <Col xs={24} md={8} xl={8}>
                         <Card
-                            title="Weekly Bank Comparison"
+                            title="Monthly Comparison"
                             variant="outlined"
                             style={{
                                 borderRadius: 16,
@@ -1178,7 +1282,7 @@ export default function Page() {
                                 style={{
                                     width: "100%",
                                     height: 180,
-                                    marginTop: -10,
+                                    marginTop: -15,
                                 }}
                             >
                                 <ColumnChart
