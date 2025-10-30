@@ -27,39 +27,77 @@ body {
 }
 #heirloom-table.ant-table-wrapper {
     border: 1px solid #d9d9d9;
-    border-radius: 8px;
-    width: 90%;
+    border-radius: 6px;
+    width: 70%; /* tighter width */
     margin: 0 auto;
-    font-size: 13px;
+    font-size: 12px;
 }
 
+/* Header cells */
 #heirloom-table .ant-table-thead > tr > th {
     background: #fafafa;
     font-weight: 600;
     text-align: center;
     border-color: #e8e8e8;
+    padding: 6px 8px !important; /* reduced header padding */
+}
+#heirloom-table.ant-table-wrapper {
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    width: 60%; /* tighter layout */
+    margin: 0 auto;
+    font-size: 11px; /* smaller text */
 }
 
+/* Header cells */
+#heirloom-table .ant-table-thead > tr > th {
+    background: #fafafa;
+    font-weight: 600;
+    text-align: center;
+    border-color: #e8e8e8;
+    padding: 3px 6px !important; /* tighter header padding */
+    font-size: 12px;
+}
+
+/* Body cells */
 #heirloom-table .ant-table-tbody > tr > td {
     border-color: #e8e8e8;
     text-align: left;
+    padding: 2px 6px !important; /* super tight padding */
+    font-size: 12px;
+    line-height: 1.2;
 }
 
+/* Make the table box smaller */
 #heirloom-table .ant-table {
-    border-radius: 8px;
+    border-radius: 6px;
     overflow: hidden;
+    table-layout: fixed;
 }
 
+/* Hover highlight stays soft */
 #heirloom-table .ant-table-tbody > tr:hover > td {
-    background: #f5f5f5 !important;
+    background: #f3f3f3 !important;
     transition: background 0.2s ease;
-    /* }
-.reward-history-table.ant-table-wrapper {
-    border: 1px solid #d9d9d9;
-    border-radius: 6px;
-    width: 85%;
-    margin: 0 auto;
-    font-size: 10px; /* smaller global font */
+}
+
+/* Compact pagination */
+#heirloom-table .ant-pagination {
+    margin: 4px 0 !important;
+    font-size: 11px;
+}
+
+/* Reduce button + space gap inside action cells */
+#heirloom-table .ant-space {
+    gap: 2px !important;
+}
+
+/* Smaller buttons inside the table */
+#heirloom-table .ant-btn {
+    height: 22px !important;
+    padding: 0 5px !important;
+    font-size: 11px !important;
+    border-radius: 4px !important;
 }
 
 /* globals.css or inside a CSS module with :global */
@@ -69,4 +107,9 @@ body {
 
 .heirlooms-card .ant-card-body {
     padding: 12px !important;
+}
+
+.ant-card .ant-card-head {
+    min-height: 0px;
+    padding: 12px 16px;
 }

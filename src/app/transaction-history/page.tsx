@@ -20,6 +20,7 @@ import {
     Form,
     Tooltip,
     Tag,
+    Pagination,
 } from "antd";
 import type { UploadFile, UploadProps } from "antd";
 import type { ColumnsType } from "antd/es/table";
@@ -70,35 +71,6 @@ const colorMap = {
     Furniture: "#d35f17ff", // warm brown
     Fashion: "#a855f7", // purple
 } as const;
-
-// Pie chart data
-const dataSales = [
-    { type: "Electronics", value: 10, color: "#1890FF" },
-    { type: "Fashion", value: 10, color: "#52C41A" },
-    { type: "Electronics", value: 10, color: "#FAAD14" },
-    { type: "Sports", value: 10, color: "#EB2F96" },
-    { type: "Cars", value: 10, color: "#2feb6eff" },
-    { type: "Other", value: 10, color: "#13C2C2" },
-];
-
-// Column chart data
-const dataColumns = [
-    { name: "Bank A", month: "Mon", value: 45 },
-    { name: "Bank A", month: "Tue", value: 60 },
-    { name: "Bank A", month: "Wed", value: 55 },
-    { name: "Bank A", month: "Thu", value: 70 },
-    { name: "Bank A", month: "Fri", value: 65 },
-    { name: "Bank A", month: "Sat", value: 40 },
-    { name: "Bank A", month: "Sun", value: 50 },
-
-    { name: "Bank B", month: "Mon", value: 35 },
-    { name: "Bank B", month: "Tue", value: 45 },
-    { name: "Bank B", month: "Wed", value: 60 },
-    { name: "Bank B", month: "Thu", value: 55 },
-    { name: "Bank B", month: "Fri", value: 70 },
-    { name: "Bank B", month: "Sat", value: 50 },
-    { name: "Bank B", month: "Sun", value: 65 },
-];
 
 interface UserRow {
     key: string;
@@ -200,122 +172,6 @@ const columns: ColumnsType<UserRow> = [
     },
 ];
 
-const columnsRewardHistory: ColumnsType<RewardHistoryRow> = [
-    {
-        title: "No",
-        dataIndex: "no",
-        key: "no",
-        width: 20,
-        align: "center",
-        render: (_: any, __: any, index: number) => (
-            <div style={{ textAlign: "center" }}>{index + 1}</div>
-        ),
-    },
-    {
-        title: "Name",
-        dataIndex: "name",
-        key: "name",
-        width: 100,
-        align: "center",
-        sorter: (a, b) => a.name.localeCompare(b.name),
-        render: (val: string) => <div style={{ textAlign: "left" }}>{val}</div>,
-    },
-    {
-        title: "Type",
-        dataIndex: "type",
-        key: "type",
-        width: 70,
-        align: "center",
-        render: (type: string) => {
-            return <div>{type}</div>;
-        },
-    },
-
-    {
-        title: "Price",
-        dataIndex: "price",
-        key: "price",
-        width: 70,
-        align: "center",
-        sorter: (a, b) => a.price - b.price,
-        render: (val: number) => (
-            <div style={{ textAlign: "left" }}>
-                {new Intl.NumberFormat("id-ID", {
-                    style: "currency",
-                    currency: "IDR",
-                    maximumFractionDigits: 0,
-                }).format(val)}
-            </div>
-        ),
-    },
-    {
-        title: "Spend Level",
-        key: "tier",
-        align: "center",
-        width: 60,
-        render: (_, record) => {
-            const price = record.price;
-            const tag =
-                price < 100_000 ? (
-                    <Tag color="green">Low</Tag>
-                ) : price < 1_000_000 ? (
-                    <Tag color="orange">Mid</Tag>
-                ) : (
-                    <Tag color="red">High</Tag>
-                );
-            return <div style={{ textAlign: "center" }}>{tag}</div>;
-        },
-    },
-    {
-        title: "Date",
-        dataIndex: "date",
-        key: "date",
-        width: 60,
-        align: "center",
-        sorter: (a, b) =>
-            new Date(a.date).getTime() - new Date(b.date).getTime(),
-        render: (val: string | Date) => (
-            <div style={{ textAlign: "left" }}>
-                {new Date(val).toLocaleDateString("id-ID", {
-                    day: "2-digit",
-                    month: "2-digit",
-                    year: "numeric",
-                })}
-            </div>
-        ),
-    },
-    {
-        title: "Time",
-        key: "time",
-        align: "center",
-        width: 60,
-        render: (_, record) => (
-            <div style={{ textAlign: "left" }}>
-                {new Date(record.date).toLocaleTimeString("id-ID", {
-                    hour: "2-digit",
-                    minute: "2-digit",
-                })}
-            </div>
-        ),
-    },
-    {
-        title: "Days Ago",
-        key: "daysAgo",
-        align: "center",
-        width: 70,
-        render: (_, record) => {
-            const diff =
-                (Date.now() - new Date(record.date).getTime()) /
-                (1000 * 3600 * 24);
-            return (
-                <div style={{ textAlign: "left" }}>{`${Math.floor(
-                    diff
-                )} days`}</div>
-            );
-        },
-    },
-];
-
 const columnsHeirloom = [
     {
         title: "No",
@@ -374,8 +230,16 @@ export default function Page() {
     const [isModalUploadOpen, setIsModalUploadOpen] = useState(false);
 
     const heirloomArray = Array.isArray(heirlooms) ? [...heirlooms] : [];
-    console.log("harland", heirloomArray);
     heirloomArray.forEach((item) => console.log(item.name));
+    const [tablePagination, setTablePagination] = useState({
+        current: 1,
+        pageSize: 50,
+    });
+    const pagedData = useMemo(() => {
+        const start = (tablePagination.current - 1) * tablePagination.pageSize;
+        const end = start + tablePagination.pageSize;
+        return rewardHistoryData.slice(start, end);
+    }, [rewardHistoryData, tablePagination]);
 
     useEffect(() => {
         if (!heirlooms || heirlooms.length === 0) {
@@ -531,6 +395,126 @@ export default function Page() {
                     ></Button>
                 </Space>
             ),
+        },
+    ];
+
+    const columnsRewardHistory: ColumnsType<RewardHistoryRow> = [
+        {
+            title: "No",
+            dataIndex: "no",
+            key: "no",
+            align: "center",
+            width: 20,
+            render: (_: any, __: any, index: number) => {
+                const currentPage = tablePagination.current || 1; // get current page
+                const pageSize = tablePagination.pageSize || 50; // get current page size
+                return (currentPage - 1) * pageSize + index + 1;
+            },
+        },
+        {
+            title: "Name",
+            dataIndex: "name",
+            key: "name",
+            width: 100,
+            align: "center",
+            sorter: (a, b) => a.name.localeCompare(b.name),
+            render: (val: string) => (
+                <div style={{ textAlign: "left" }}>{val}</div>
+            ),
+        },
+        {
+            title: "Type",
+            dataIndex: "type",
+            key: "type",
+            width: 70,
+            align: "center",
+            render: (type: string) => {
+                return <div>{type}</div>;
+            },
+        },
+
+        {
+            title: "Price",
+            dataIndex: "price",
+            key: "price",
+            width: 70,
+            align: "center",
+            sorter: (a, b) => a.price - b.price,
+            render: (val: number) => (
+                <div style={{ textAlign: "left" }}>
+                    {new Intl.NumberFormat("id-ID", {
+                        style: "currency",
+                        currency: "IDR",
+                        maximumFractionDigits: 0,
+                    }).format(val)}
+                </div>
+            ),
+        },
+        {
+            title: "Spend Level",
+            key: "tier",
+            align: "center",
+            width: 60,
+            render: (_, record) => {
+                const price = record.price;
+                const tag =
+                    price < 100_000 ? (
+                        <Tag color="green">Low</Tag>
+                    ) : price < 1_000_000 ? (
+                        <Tag color="orange">Mid</Tag>
+                    ) : (
+                        <Tag color="red">High</Tag>
+                    );
+                return <div style={{ textAlign: "center" }}>{tag}</div>;
+            },
+        },
+        {
+            title: "Date",
+            dataIndex: "date",
+            key: "date",
+            width: 60,
+            align: "center",
+            sorter: (a, b) =>
+                new Date(a.date).getTime() - new Date(b.date).getTime(),
+            render: (val: string | Date) => (
+                <div style={{ textAlign: "left" }}>
+                    {new Date(val).toLocaleDateString("id-ID", {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                    })}
+                </div>
+            ),
+        },
+        {
+            title: "Time",
+            key: "time",
+            align: "center",
+            width: 60,
+            render: (_, record) => (
+                <div style={{ textAlign: "left" }}>
+                    {new Date(record.date).toLocaleTimeString("id-ID", {
+                        hour: "2-digit",
+                        minute: "2-digit",
+                    })}
+                </div>
+            ),
+        },
+        {
+            title: "Days Ago",
+            key: "daysAgo",
+            align: "center",
+            width: 70,
+            render: (_, record) => {
+                const diff =
+                    (Date.now() - new Date(record.date).getTime()) /
+                    (1000 * 3600 * 24);
+                return (
+                    <div style={{ textAlign: "left" }}>{`${Math.floor(
+                        diff
+                    )} days`}</div>
+                );
+            },
         },
     ];
 
@@ -885,9 +869,9 @@ export default function Page() {
                         <Table<RewardHistoryRow>
                             size="small"
                             columns={columnsRewardHistory}
-                            dataSource={rewardHistoryData}
-                            pagination={{ pageSize: 50 }}
-                            scroll={{ x: 0, y: "355px" }}
+                            dataSource={pagedData}
+                            pagination={false}
+                            scroll={{ x: 0, y: "calc(100vh - 355px)" }}
                             locale={{
                                 emptyText: "No rewards uploaded yet",
                             }}
@@ -935,8 +919,43 @@ export default function Page() {
                                 },
                             }}
                         />
+                        <div
+                            style={{
+                                display: "flex",
+                                justifyContent: "space-between",
+                                alignItems: "center",
+                                padding: "8px 12px",
+                            }}
+                        >
+                            <div style={{ fontWeight: "bold",marginTop:10 }}>
+                                Total:{" "}
+                                {new Intl.NumberFormat("id-ID", {
+                                    style: "currency",
+                                    currency: "IDR",
+                                    maximumFractionDigits: 0,
+                                }).format(
+                                    rewardHistoryData.reduce(
+                                        (sum, row) => sum + row.price,
+                                        0
+                                    )
+                                )}
+                            </div>
+                            <Pagination
+                                current={tablePagination.current}
+                                pageSize={tablePagination.pageSize}
+                                total={rewardHistoryData.length}
+                                showSizeChanger
+                                pageSizeOptions={["10", "50", "100"]}
+                                onChange={(page, pageSize) =>
+                                    setTablePagination({
+                                        current: page,
+                                        pageSize,
+                                    })
+                                }
+                            />
+                        </div>
                     </Card>
-                </Col>
+                                        </Col>
                 <Modal
                     title="Upload Excel"
                     open={isModalUploadOpen}

@@ -35,7 +35,7 @@ const ColumnChart: React.FC<ColumnChartProps> = ({
         },
         legend: false,
         autoFit: true,
-        height: 230,
+        height: 200,
     };
 
     return (

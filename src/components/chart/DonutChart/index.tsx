@@ -54,7 +54,7 @@ const PieChart: React.FC<PieChartProps> = ({ data, title }) => {
                 fontSize: 10,
             },
         },
-        height: 220,
+        height: 200,
         annotations: [
             {
                 type: "text",

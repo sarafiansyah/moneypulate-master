@@ -191,56 +191,6 @@ const columns: ColumnsType<UserRow> = [
     },
 ];
 
-const columnsRewardHistory: ColumnsType<RewardHistoryRow> = [
-    {
-        title: "No",
-        dataIndex: "no",
-        key: "no",
-        width: 1,
-        align: "center",
-        render: (_: any, __: any, index: number) => (
-            <div style={{ textAlign: "center" }}>{index + 1}</div>
-        ),
-    },
-    {
-        title: "Name",
-        dataIndex: "name",
-        key: "name",
-        width: 100, // enough for most names
-        align: "left",
-        sorter: (a, b) => a.name.localeCompare(b.name),
-    },
-    {
-        title: "Price",
-        dataIndex: "price",
-        key: "price",
-        width: 80, // slightly bigger for readability
-        align: "right",
-        sorter: (a, b) => a.price - b.price,
-        render: (val: number) =>
-            new Intl.NumberFormat("id-ID", {
-                style: "currency",
-                currency: "IDR",
-                maximumFractionDigits: 0,
-            }).format(val),
-    },
-    {
-        title: "Date",
-        dataIndex: "date",
-        key: "date",
-        width: 80, // a bit wider for readability
-        align: "center",
-        sorter: (a, b) =>
-            new Date(a.date).getTime() - new Date(b.date).getTime(),
-        render: (val: string | Date) =>
-            new Date(val).toLocaleDateString("id-ID", {
-                day: "2-digit",
-                month: "2-digit",
-                year: "numeric",
-            }),
-    },
-];
-
 const columnsHeirloom = [
     {
         title: "No",
@@ -296,9 +246,11 @@ export default function Page() {
         (state) => state.rewardHistoryData
     );
     const { clearRewardHistoryData } = useRewardHistoryStore();
-
+    const [tablePagination, setTablePagination] = useState({
+        current: 1,
+        pageSize: 50,
+    });
     const heirloomArray = Array.isArray(heirlooms) ? [...heirlooms] : [];
-    console.log("harland", heirloomArray);
     heirloomArray.forEach((item) => console.log(item.name));
 
     useEffect(() => {
@@ -457,6 +409,71 @@ export default function Page() {
             ),
         },
     ];
+    const columnsRewardHistory: ColumnsType<RewardHistoryRow> = [
+        {
+            title: "No",
+            dataIndex: "no",
+            key: "no",
+            align: "center",
+            width: 10,
+            render: (_: any, __: any, index: number) => {
+                const currentPage = tablePagination.current || 1; // current page
+                const pageSize = tablePagination.pageSize || 50; // current page size
+                const number = (currentPage - 1) * pageSize + index + 1;
+
+                return (
+                    <div
+                        style={{
+                            display: "flex",
+                            justifyContent: "center",
+                            alignItems: "center",
+                            textAlign: "center",
+                            width: "100%",
+                        }}
+                    >
+                        {number}
+                    </div>
+                );
+            },
+        },
+        {
+            title: "Name",
+            dataIndex: "name",
+            key: "name",
+            width: 100, // enough for most names
+            align: "left",
+            sorter: (a, b) => a.name.localeCompare(b.name),
+        },
+        {
+            title: "Price",
+            dataIndex: "price",
+            key: "price",
+            width: 80, // slightly bigger for readability
+            align: "right",
+            sorter: (a, b) => a.price - b.price,
+            render: (val: number) =>
+                new Intl.NumberFormat("id-ID", {
+                    style: "currency",
+                    currency: "IDR",
+                    maximumFractionDigits: 0,
+                }).format(val),
+        },
+        {
+            title: "Date",
+            dataIndex: "date",
+            key: "date",
+            width: 80, // a bit wider for readability
+            align: "center",
+            sorter: (a, b) =>
+                new Date(a.date).getTime() - new Date(b.date).getTime(),
+            render: (val: string | Date) =>
+                new Date(val).toLocaleDateString("id-ID", {
+                    day: "2-digit",
+                    month: "2-digit",
+                    year: "numeric",
+                }),
+        },
+    ];
 
     const totalPrice = useMemo(
         () => heirlooms.reduce((sum, item) => sum + item.price, 0),
@@ -530,7 +547,7 @@ export default function Page() {
     const getSpendingLevel = (value: number) => {
         if (value < 100) return "Low Spending";
         if (value < 200) return "Normal Spending";
-        if (value < 300) return "Average Spending";
+        if (value < 260) return "Average Spending";
         return "High Spending";
     };
     const getSpendingColor = (level: string) => {
@@ -740,17 +757,26 @@ export default function Page() {
     });
 
     return (
-        <main style={{ padding: "1rem" }}>
+        <main style={{ padding: "2px 12px" }}>
             <Row gutter={[24, 24]}>
-                <Row gutter={[24, 24]}>
+                <Row gutter={[22, 22]}>
                     {/* TOP SECTION (1:2:1 Ratio) */}
                     <Col xs={24} md={6} xl={6}>
                         <Card
-                            title="Performance Gauge"
+                            title={
+                                <span
+                                    style={{
+                                        fontSize: "14px",
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    Performance Gauge
+                                </span>
+                            }
                             variant="outlined"
                             style={{
                                 borderRadius: 16,
-                                height: 300,
+                                height: 260,
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                             }}
                         >
@@ -759,12 +785,12 @@ export default function Page() {
                                     display: "flex",
                                     flexDirection: "column",
                                     alignItems: "center",
-                                    marginTop: "-20px",
+                                    marginTop: "-22px",
                                 }}
                             >
                                 <div
                                     style={{
-                                        height: 200,
+                                        height: 190,
                                         width: "100%",
                                         margin: "0 auto",
                                     }}
@@ -779,7 +805,7 @@ export default function Page() {
                                 <div
                                     style={{
                                         textAlign: "center",
-                                        marginTop: "-54px",
+                                        marginTop: "-60px",
                                     }}
                                 >
                                     <h3
@@ -795,11 +821,9 @@ export default function Page() {
                                         style={{
                                             color: "#777",
                                             fontSize: "12px",
-                                            marginTop: "-8px",
+                                            marginTop: "-10px",
                                         }}
                                     >
-                                        <span>Based on Total</span>
-                                        <br />
                                         <span
                                             style={{
                                                 color:
@@ -841,7 +865,7 @@ export default function Page() {
                                     <Title
                                         level={5}
                                         style={{
-                                            fontSize: "16px",
+                                            fontSize: "14px",
                                             margin: 0,
                                             fontWeight: "bold",
                                         }}
@@ -887,7 +911,7 @@ export default function Page() {
                                             </span>
                                         </Tooltip>
                                     </Title>
-                                    <Space>
+                                    <Space size={4}>
                                         <Tooltip title="Details">
                                             <Button
                                                 type="primary"
@@ -919,7 +943,7 @@ export default function Page() {
                             }
                             style={{
                                 borderRadius: 12,
-                                height: 300,
+                                height: 260,
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                                 overflowX: "auto",
                                 scrollbarWidth: "none", // Firefox
@@ -953,7 +977,7 @@ export default function Page() {
                                                     columnsHeirloom.length - 1
                                                 }
                                             >
-                                                <div
+                                                {/* <div
                                                     style={{
                                                         fontWeight: "bold",
                                                         color: "#555",
@@ -963,7 +987,7 @@ export default function Page() {
                                                     {new Intl.NumberFormat(
                                                         "id-ID"
                                                     ).format(totalPrice)}
-                                                </div>
+                                                </div> */}
                                             </Table.Summary.Cell>
                                         </Table.Summary.Row>
                                     );
@@ -1024,11 +1048,20 @@ export default function Page() {
 
                     <Col xs={24} md={6} xl={6}>
                         <Card
-                            title="Category Breakdown"
+                            title={
+                                <span
+                                    style={{
+                                        fontSize: "14px",
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    Category Breakdown
+                                </span>
+                            }
                             variant="outlined"
                             style={{
                                 borderRadius: 16,
-                                height: 300,
+                                height: 260,
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                             }}
                         >
@@ -1073,14 +1106,14 @@ export default function Page() {
                                     <Title
                                         level={5}
                                         style={{
-                                            fontSize: "16px",
+                                            fontSize: "14px",
                                             margin: 0,
                                             fontWeight: "bold",
                                         }}
                                     >
                                         Transaction History
                                     </Title>
-                                    <Space>
+                                    <Space size={4}>
                                         <Tooltip title="Details">
                                             <Button
                                                 type="primary"
@@ -1088,6 +1121,13 @@ export default function Page() {
                                                 onClick={() =>
                                                     router.push("/heirlooms")
                                                 }
+                                            ></Button>
+                                        </Tooltip>
+                                        <Tooltip title="Download Excel">
+                                            <Button
+                                                type="primary"
+                                                icon={<DownloadOutlined />}
+                                                onClick={downloadExcel}
                                             ></Button>
                                         </Tooltip>
                                         <Tooltip title="Clear Data">
@@ -1098,20 +1138,13 @@ export default function Page() {
                                                 onClick={handleClearData}
                                             ></Button>
                                         </Tooltip>
-                                        <Tooltip title="Download Excel">
-                                            <Button
-                                                type="primary"
-                                                icon={<DownloadOutlined />}
-                                                onClick={downloadExcel}
-                                            ></Button>
-                                        </Tooltip>
                                     </Space>
                                 </div>
                             }
                             style={{
                                 padding: 0,
                                 borderRadius: 16,
-                                height: 300,
+                                height: 260,
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                                 overflowX: "auto",
                                 scrollbarWidth: "none", // Firefox
@@ -1123,7 +1156,17 @@ export default function Page() {
                                 size="small"
                                 columns={columnsRewardHistory}
                                 dataSource={rewardHistoryData}
-                                pagination={{ pageSize: 10 }}
+                                pagination={{
+                                    current: tablePagination.current,
+                                    pageSize: tablePagination.pageSize,
+                                    onChange: (page, pageSize) =>
+                                        setTablePagination({
+                                            current: page,
+                                            pageSize,
+                                        }),
+                                    showSizeChanger: true,
+                                    pageSizeOptions: ["10", "50", "100", "200"],
+                                }}
                                 scroll={{ x: 0 }}
                                 locale={{
                                     emptyText: "No rewards uploaded yet",
@@ -1168,7 +1211,16 @@ export default function Page() {
 
                     <Col xs={24} md={8} xl={8}>
                         <Card
-                            title="Upload Files"
+                            title={
+                                <span
+                                    style={{
+                                        fontSize: "14px",
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    Upload History
+                                </span>
+                            }
                             variant="outlined"
                             extra={
                                 <Button
@@ -1180,7 +1232,7 @@ export default function Page() {
                             }
                             style={{
                                 borderRadius: 16,
-                                height: 300,
+                                height: 260,
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                             }}
                         >
@@ -1193,7 +1245,7 @@ export default function Page() {
                                 <div
                                     style={{
                                         background: "#defbeaff",
-                                        padding: 12,
+                                        padding: 8,
                                         borderRadius: "50%",
                                         display: "flex",
                                         justifyContent: "center",
@@ -1205,7 +1257,7 @@ export default function Page() {
                                 >
                                     <FileExcelOutlined
                                         style={{
-                                            fontSize: 36,
+                                            fontSize: 32,
                                             color: "#0da84d",
                                         }}
                                     />
@@ -1217,6 +1269,7 @@ export default function Page() {
                                         marginTop: -10,
                                         fontWeight: 600,
                                         letterSpacing: 0.3,
+                                        fontSize: 14,
                                     }}
                                 >
                                     Upload Excel File
@@ -1225,8 +1278,8 @@ export default function Page() {
                                 <Text
                                     type="secondary"
                                     style={{
-                                        fontSize: 13,
-                                        marginTop: -30,
+                                        fontSize: 12,
+                                        marginTop: -34,
                                         display: "flex",
                                     }}
                                 >
@@ -1241,14 +1294,15 @@ export default function Page() {
                                     onChange={handleExcelUpload}
                                     style={{
                                         color: "#999",
-                                        marginTop: -10,
+                                        marginTop: -25,
                                         display: "flex",
                                     }}
                                 >
                                     <Button
                                         type="primary"
                                         icon={<UploadOutlined />}
-                                        size="middle"
+                                        size="small"
+                                        style={{ fontSize: 14 }}
                                     >
                                         Choose Excel File
                                     </Button>
@@ -1270,11 +1324,20 @@ export default function Page() {
 
                     <Col xs={24} md={8} xl={8}>
                         <Card
-                            title="Monthly Comparison"
+                            title={
+                                <span
+                                    style={{
+                                        fontSize: "14px",
+                                        fontWeight: 600,
+                                    }}
+                                >
+                                    Monthly Comparison
+                                </span>
+                            }
                             variant="outlined"
                             style={{
                                 borderRadius: 16,
-                                height: 300,
+                                height: 260,
                                 boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                             }}
                         >
@@ -1282,7 +1345,7 @@ export default function Page() {
                                 style={{
                                     width: "100%",
                                     height: 180,
-                                    marginTop: -15,
+                                    marginTop: -17,
                                 }}
                             >
                                 <ColumnChart
