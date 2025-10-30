@@ -6,6 +6,7 @@ import {
     GoldOutlined,
     InfoCircleOutlined,
     ReadOutlined,
+    DatabaseOutlined,
 } from "@ant-design/icons";
 import { AppMenuItem } from "./types";
 
@@ -34,6 +35,11 @@ const baseMenuItems = [
         icon: <ReadOutlined />,
         label: "Transactions",
         path: "/transaction-history",
+    },
+    {
+        icon: <DatabaseOutlined />,
+        label: "Memory",
+        path: "/saved-memories",
     },
     {
         icon: <InfoCircleOutlined />,
