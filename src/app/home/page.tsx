@@ -39,65 +39,32 @@ import { saveAs } from "file-saver";
 import GaugeChart from "@/components/chart/GaugeChart";
 import PieChart from "@/components/chart/DonutChart";
 import ColumnChart from "@/components/chart/ColumnChart";
+import { typeOptions } from "@/components/heirloom/HeirloomType";
 import { useBalanceStore } from "@/store/useBalanceStore";
 import { useHeirloomStore, Heirloom } from "@/store/useHeirloomStore";
 import { useRewardHistoryStore } from "@/store/useRewardHistoryStore";
+import { motion, AnimatePresence, Variants, easeOut } from "framer-motion";
 
 const { Dragger } = Upload;
 const { Title, Text } = Typography;
 const { Option } = Select;
 const { confirm, success } = Modal;
-
-// interface Heirloom {
-//     key: string;
-//     name: string;
-//     type: string;
-//     price: number;
-//     date: string;
-// }
+const cardVariants: Variants = {
+    hidden: { opacity: 0, y: 40 },
+    visible: {
+        opacity: 1,
+        y: 0,
+        transition: {
+            duration: 0.6,
+            ease: easeOut, // ✅ use the imported easing function
+        },
+    },
+};
 
 interface PieChartItem {
     type: string;
     value: number;
     color: string;
-}
-
-// Pie chart data
-const dataSales = [
-    { type: "Electronics", value: 10, color: "#1890FF" },
-    { type: "Fashion", value: 10, color: "#52C41A" },
-    { type: "Electronics", value: 10, color: "#FAAD14" },
-    { type: "Sports", value: 10, color: "#EB2F96" },
-    { type: "Cars", value: 10, color: "#2feb6eff" },
-    { type: "Other", value: 10, color: "#13C2C2" },
-];
-
-// Column chart data
-const dataColumns = [
-    { name: "Bank A", month: "Mon", value: 45 },
-    { name: "Bank A", month: "Tue", value: 60 },
-    { name: "Bank A", month: "Wed", value: 55 },
-    { name: "Bank A", month: "Thu", value: 70 },
-    { name: "Bank A", month: "Fri", value: 65 },
-    { name: "Bank A", month: "Sat", value: 40 },
-    { name: "Bank A", month: "Sun", value: 50 },
-
-    { name: "Bank B", month: "Mon", value: 35 },
-    { name: "Bank B", month: "Tue", value: 45 },
-    { name: "Bank B", month: "Wed", value: 60 },
-    { name: "Bank B", month: "Thu", value: 55 },
-    { name: "Bank B", month: "Fri", value: 70 },
-    { name: "Bank B", month: "Sat", value: 50 },
-    { name: "Bank B", month: "Sun", value: 65 },
-];
-
-interface UserRow {
-    key: string;
-    name: string;
-    age: number;
-    email: string;
-    city: string;
-    income: number;
 }
 
 interface RewardHistoryRow {
@@ -108,119 +75,6 @@ interface RewardHistoryRow {
     price: number;
     date: string;
 }
-
-const initialData: UserRow[] = [
-    {
-        key: "1",
-        name: "Alice",
-        age: 28,
-        email: "alice@example.com",
-        city: "Jakarta",
-        income: 4200,
-    },
-    {
-        key: "2",
-        name: "Bob",
-        age: 34,
-        email: "bob@example.com",
-        city: "Bandung",
-        income: 5000,
-    },
-    {
-        key: "3",
-        name: "Citra",
-        age: 22,
-        email: "citra@example.com",
-        city: "Surabaya",
-        income: 2800,
-    },
-    {
-        key: "4",
-        name: "Dimas",
-        age: 40,
-        email: "dimas@example.com",
-        city: "Medan",
-        income: 6200,
-    },
-    {
-        key: "5",
-        name: "Eka",
-        age: 31,
-        email: "eka@example.com",
-        city: "Yogyakarta",
-        income: 4700,
-    },
-];
-
-const columns: ColumnsType<UserRow> = [
-    {
-        title: "Name",
-        dataIndex: "name",
-        key: "name",
-        sorter: (a, b) => a.name.localeCompare(b.name),
-    },
-    {
-        title: "Age",
-        dataIndex: "age",
-        key: "age",
-        sorter: (a, b) => a.age - b.age,
-        width: 100,
-    },
-    { title: "Email", dataIndex: "email", key: "email" },
-    {
-        title: "City",
-        dataIndex: "city",
-        key: "city",
-        filters: [
-            { text: "Jakarta", value: "Jakarta" },
-            { text: "Bandung", value: "Bandung" },
-            { text: "Surabaya", value: "Surabaya" },
-            { text: "Medan", value: "Medan" },
-            { text: "Yogyakarta", value: "Yogyakarta" },
-        ],
-        onFilter: (value, record) => record.city === value,
-    },
-    {
-        title: "Price",
-        dataIndex: "income",
-        key: "income",
-        sorter: (a, b) => a.income - b.income,
-        render: (val: number) => `IDR ${val.toLocaleString()}`,
-        align: "right",
-        width: 140,
-    },
-];
-
-const columnsHeirloom = [
-    {
-        title: "No",
-        key: "index",
-        width: 50, // fixed width for numbering
-        render: (_: any, __: any, index: number) => index + 1, // 1-based index
-    },
-    {
-        title: "Name",
-        dataIndex: "name",
-        key: "name",
-        width: 200, // you can adjust
-    },
-    {
-        title: "Price",
-        dataIndex: "price",
-        key: "price",
-        width: 100,
-        render: (val: number) => `$${val}`,
-    },
-];
-
-const options = [
-    { value: "Electronics", label: "Electronics" },
-    { value: "Jewelry", label: "Jewelry" },
-    { value: "Foods", label: "Foods" },
-    { value: "Art", label: "Art" },
-    { value: "Furniture", label: "Furniture" },
-    { value: "Other", label: "Other" },
-];
 
 export default function Page() {
     const target = 150;
@@ -233,14 +87,11 @@ export default function Page() {
     const [isModalOpen, setIsModalOpen] = useState(false);
     const [editingItem, setEditingItem] = useState<Heirloom | null>(null);
     const [price, setPrice] = useState<number>(0);
-    const [data] = useState<UserRow[]>(initialData);
     const [search, setSearch] = useState("");
     const [selectedRowKeys, setSelectedRowKeys] = useState<React.Key[]>([]);
     const [fileList, setFileList] = useState<UploadFile[]>([]);
     const { currentBalance } = useBalanceStore();
     const [pieChartData, setPieChartData] = useState<PieChartItem[]>([]);
-    const [transactionData, setTransactionData] =
-        useState<UserRow[]>(initialData);
     const [form] = Form.useForm();
     const rewardHistoryData = useRewardHistoryStore(
         (state) => state.rewardHistoryData
@@ -300,7 +151,6 @@ export default function Page() {
         setPieChartData(mapped);
     }, [heirlooms]);
 
-    console.log("MAP", pieChartData);
     const openModal = (item?: Heirloom) => {
         if (item) {
             setEditingItem(item);
@@ -479,17 +329,6 @@ export default function Page() {
         () => heirlooms.reduce((sum, item) => sum + item.price, 0),
         [heirlooms]
     );
-
-    const filtered = useMemo(() => {
-        if (!search.trim()) return data;
-        const q = search.toLowerCase();
-        return data.filter(
-            (r) =>
-                r.name.toLowerCase().includes(q) ||
-                r.email.toLowerCase().includes(q) ||
-                r.city.toLowerCase().includes(q)
-        );
-    }, [data, search]);
 
     const rowSelection = {
         selectedRowKeys,
@@ -762,93 +601,100 @@ export default function Page() {
                 <Row gutter={[22, 22]}>
                     {/* TOP SECTION (1:2:1 Ratio) */}
                     <Col xs={24} md={6} xl={6}>
-                        <Card
-                            title={
-                                <span
-                                    style={{
-                                        fontSize: "14px",
-                                        fontWeight: 600,
-                                    }}
-                                >
-                                    Performance Gauge
-                                </span>
-                            }
-                            variant="outlined"
-                            style={{
-                                borderRadius: 16,
-                                height: 260,
-                                boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
-                            }}
+                        <motion.div
+                            variants={cardVariants}
+                            initial="hidden"
+                            animate="visible"
                         >
-                            <div
+                            <Card
+                                title={
+                                    <span
+                                        style={{
+                                            fontSize: "14px",
+                                            fontWeight: 600,
+                                        }}
+                                    >
+                                        Performance Gauge
+                                    </span>
+                                }
+                                variant="outlined"
                                 style={{
-                                    display: "flex",
-                                    flexDirection: "column",
-                                    alignItems: "center",
-                                    marginTop: "-22px",
+                                    borderRadius: 16,
+                                    height: 260,
+                                    boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
                                 }}
                             >
                                 <div
                                     style={{
-                                        height: 190,
-                                        width: "100%",
-                                        margin: "0 auto",
+                                        display: "flex",
+                                        flexDirection: "column",
+                                        alignItems: "center",
+                                        marginTop: "-22px",
                                     }}
                                 >
-                                    <GaugeChart
-                                        target={gaugeValue}
-                                        total={total}
-                                        title=""
-                                    />
-                                </div>
+                                    <div
+                                        style={{
+                                            height: 190,
+                                            width: "100%",
+                                            margin: "0 auto",
+                                        }}
+                                    >
+                                        <GaugeChart
+                                            target={gaugeValue}
+                                            total={total}
+                                            title=""
+                                        />
+                                    </div>
 
-                                <div
-                                    style={{
-                                        textAlign: "center",
-                                        marginTop: "-60px",
-                                    }}
-                                >
-                                    <h3
+                                    <div
                                         style={{
-                                            fontSize: "20px",
-                                            fontWeight: 600,
-                                            color: spendingColor,
+                                            textAlign: "center",
+                                            marginTop: "-60px",
                                         }}
                                     >
-                                        {spendingLevel}
-                                    </h3>
-                                    <p
-                                        style={{
-                                            color: "#777",
-                                            fontSize: "12px",
-                                            marginTop: "-10px",
-                                        }}
-                                    >
-                                        <span
+                                        <h3
                                             style={{
-                                                color:
-                                                    totalPrice > currentBalance
-                                                        ? "#F5222D"
-                                                        : "#434343ff", // 🔥 red if over, blue if within
+                                                fontSize: "20px",
                                                 fontWeight: 600,
+                                                color: spendingColor,
                                             }}
                                         >
-                                            Rp.
-                                            {new Intl.NumberFormat(
-                                                "id-ID"
-                                            ).format(totalPrice)}
-                                        </span>
-                                        {" / "}
-                                        <span>
-                                            Rp.
-                                            {new Intl.NumberFormat(
-                                                "id-ID"
-                                            ).format(currentBalance)}
-                                        </span>
-                                    </p>
+                                            {spendingLevel}
+                                        </h3>
+                                        <p
+                                            style={{
+                                                color: "#777",
+                                                fontSize: "12px",
+                                                marginTop: "-10px",
+                                            }}
+                                        >
+                                            <span
+                                                style={{
+                                                    color:
+                                                        totalPrice >
+                                                        currentBalance
+                                                            ? "#F5222D"
+                                                            : "#434343ff", // 🔥 red if over, blue if within
+                                                    fontWeight: 600,
+                                                }}
+                                            >
+                                                Rp.
+                                                {new Intl.NumberFormat(
+                                                    "id-ID"
+                                                ).format(totalPrice)}
+                                            </span>
+                                            {" / "}
+                                            <span>
+                                                Rp.
+                                                {new Intl.NumberFormat(
+                                                    "id-ID"
+                                                ).format(currentBalance)}
+                                            </span>
+                                        </p>
+                                    </div>
                                 </div>
-                            </div>
-                        </Card>
+                            </Card>
+                        </motion.div>
                     </Col>
 
                     <Col xs={24} md={12} xl={12}>
@@ -995,54 +841,99 @@ export default function Page() {
                             />
 
                             {/* Modal for Add/Edit */}
-                            <Modal
-                                title={
-                                    editingItem
-                                        ? "Edit Heirloom"
-                                        : "Add Heirloom"
-                                }
-                                open={isModalOpen}
-                                onOk={handleSave}
-                                onCancel={closeModal}
-                                okText="Save"
-                            >
-                                <Form form={form} layout="vertical">
-                                    <Form.Item
-                                        name="name"
-                                        label="Name"
-                                        rules={[{ required: true }]}
+                            <AnimatePresence>
+                                {isModalOpen && (
+                                    <motion.div
+                                        className="fixed inset-0 bg-black/40 flex items-start justify-center pt-24 z-50"
+                                        initial={{ opacity: 0 }}
+                                        animate={{ opacity: 1 }}
+                                        exit={{ opacity: 0 }}
                                     >
-                                        <Input placeholder="Heirloom Name" />
-                                    </Form.Item>
-                                    <Form.Item
-                                        name="type"
-                                        label="Type"
-                                        rules={[{ required: true }]}
-                                    >
-                                        <Select placeholder="Select Type">
-                                            {options.map((opt) => (
-                                                <Option
-                                                    key={opt.value}
-                                                    value={opt.value}
+                                        <motion.div
+                                            className="bg-white rounded-xl p-6 shadow-xl w-[400px]"
+                                            initial={{ scale: 0.9, opacity: 0 }}
+                                            animate={{ scale: 1, opacity: 1 }}
+                                            exit={{ scale: 0.9, opacity: 0 }}
+                                            transition={{ duration: 0.3 }}
+                                        >
+                                            <Title
+                                                style={{
+                                                    fontSize: 18,
+                                                    fontWeight: 700,
+                                                    background:
+                                                        "linear-gradient(90deg, #21ba0aff 0%, #17990dff 100%)",
+                                                    WebkitBackgroundClip:
+                                                        "text",
+                                                    WebkitTextFillColor:
+                                                        "transparent",
+                                                    marginBottom: 12,
+                                                }}
+                                            >
+                                                {editingItem
+                                                    ? "Edit Heirloom"
+                                                    : "Add Heirloom"}
+                                            </Title>
+                                            <Form form={form} layout="vertical">
+                                                <Form.Item
+                                                    name="name"
+                                                    label="Name"
+                                                    rules={[{ required: true }]}
                                                 >
-                                                    {opt.label}
-                                                </Option>
-                                            ))}
-                                        </Select>
-                                    </Form.Item>
-                                    <Form.Item
-                                        name="price"
-                                        label="Price"
-                                        rules={[{ required: true }]}
-                                    >
-                                        <InputNumber
-                                            placeholder="Price"
-                                            min={0}
-                                            style={{ width: "100%" }}
-                                        />
-                                    </Form.Item>
-                                </Form>
-                            </Modal>
+                                                    <Input placeholder="Heirloom Name" />
+                                                </Form.Item>
+
+                                                <Form.Item
+                                                    name="type"
+                                                    label="Type"
+                                                    rules={[{ required: true }]}
+                                                >
+                                                    <Select placeholder="Select Type">
+                                                        {typeOptions.map(
+                                                            (opt) => (
+                                                                <Option
+                                                                    key={
+                                                                        opt.value
+                                                                    }
+                                                                    value={
+                                                                        opt.value
+                                                                    }
+                                                                >
+                                                                    {opt.label}
+                                                                </Option>
+                                                            )
+                                                        )}
+                                                    </Select>
+                                                </Form.Item>
+
+                                                <Form.Item
+                                                    name="price"
+                                                    label="Price"
+                                                    rules={[{ required: true }]}
+                                                >
+                                                    <InputNumber
+                                                        placeholder="Price"
+                                                        min={0}
+                                                        style={{
+                                                            width: "100%",
+                                                        }}
+                                                    />
+                                                </Form.Item>
+                                            </Form>
+                                            <div className="flex justify-end mt-4 gap-2">
+                                                <Button onClick={closeModal}>
+                                                    Cancel
+                                                </Button>
+                                                <Button
+                                                    type="primary"
+                                                    onClick={handleSave}
+                                                >
+                                                    Save
+                                                </Button>
+                                            </div>
+                                        </motion.div>
+                                    </motion.div>
+                                )}
+                            </AnimatePresence>
                         </Card>
                     </Col>
 
@@ -1283,8 +1174,7 @@ export default function Page() {
                                         display: "flex",
                                     }}
                                 >
-                                    Import data to update the Transaction
-                                    History table.
+                                    Import data to Transaction History table.
                                 </Text>
 
                                 <Upload

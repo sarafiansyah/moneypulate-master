@@ -83,6 +83,8 @@ export default function ClientLayout({
                 >
                     {/* Sidebar */}
                     <Sider
+                        breakpoint="lg" // auto-collapse when width < 992px
+  
                         collapsed={collapsed}
                         onCollapse={(value) => setCollapsed(value)}
                         theme="light"
