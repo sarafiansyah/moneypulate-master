@@ -11,6 +11,7 @@ import {
     Avatar,
     Typography,
     Space,
+    Drawer,
 } from "antd";
 import {
     UserOutlined,
@@ -36,6 +37,9 @@ export default function ClientLayout({
     children: React.ReactNode;
 }) {
     const [collapsed, setCollapsed] = useState(false);
+    const [isSmallScreen, setIsSmallScreen] = useState(false);
+    const [portableOpen, setPortableOpen] = useState(false); // floating sider state
+
     const router = useRouter();
     const pathname = usePathname();
     const {
@@ -83,19 +87,94 @@ export default function ClientLayout({
                 >
                     {/* Sidebar */}
                     <Sider
-                        breakpoint="lg" // auto-collapse when width < 992px
-  
+                        breakpoint="sm"
+                        onBreakpoint={(broken) => setIsSmallScreen(broken)}
+                        collapsedWidth={isSmallScreen ? 0 : 80}
                         collapsed={collapsed}
                         onCollapse={(value) => setCollapsed(value)}
                         theme="light"
+                        trigger={null} // disable default trigger
                         style={{
                             margin: 16,
                             borderRadius: 12,
                             background: "#fff",
                             boxShadow: "0 4px 12px rgba(0,0,0,0.05)",
                             overflow: "hidden",
+                            position: "relative",
+                            zIndex: 999,
                         }}
                     >
+                        {/* custom trigger (appears only when collapsedWidth is 0 and collapsed) */}
+                        {isSmallScreen && collapsed && (
+                            <div
+                                style={{
+                                    position: "fixed",
+                                    top: 64,
+                                    left: 0,
+                                    zIndex: 1100,
+                                    cursor: "pointer",
+                                    background: "#fff",
+                                    borderTopRightRadius: "20%",
+                                    borderBottomRightRadius: "20%",
+                                    boxShadow: "0 2px 8px rgba(0,0,0,0.15)",
+                                    width: 48,
+                                    height: 48,
+                                    display: "flex",
+                                    alignItems: "center",
+                                    justifyContent: "center",
+                                }}
+                                onClick={() => setPortableOpen(true)}
+                            >
+                                {/* replace this icon with your logo */}
+                                <img
+                                    src="/assets/logo/moneypulate-icon.svg"
+                                    alt="logo"
+                                    style={{
+                                        width: 28,
+                                        height: 28,
+                                        marginLeft: -2,
+                                    }}
+                                />
+                                {/* or <MenuOutlined /> if you prefer an icon */}
+                            </div>
+                        )}
+
+                        {/* Floating portable sider (Drawer) */}
+                        <Drawer
+                            placement="left"
+                            open={portableOpen}
+                            onClose={() => setPortableOpen(false)}
+                            width={240}
+                            closable={false}
+                            styles={{
+                                body: {
+                                    padding: 0,
+                                    background: "#fff",
+                                    borderRadius: "0 12px 12px 0",
+                                },
+                            }}
+                        >
+                            <Menu
+                                theme="light"
+                                inlineCollapsed={false}
+                                mode="inline"
+                                selectedKeys={[
+                                    menuItems.find(
+                                        (item) => item.path === pathname
+                                    )?.key || "",
+                                ]}
+                                onClick={handleMenuClick}
+                                items={menuItems.map(
+                                    ({ key, icon, label }) => ({
+                                        key,
+                                        icon,
+                                        label,
+                                    })
+                                )}
+                                style={{ borderRadius: 8 }}
+                            />
+                        </Drawer>
+
                         <div
                             style={{
                                 height: 42,

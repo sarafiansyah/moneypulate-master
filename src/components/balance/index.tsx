@@ -12,12 +12,14 @@ import {
     Row,
     Col,
     Modal,
+    Form,
 } from "antd";
 import {
     DeleteOutlined,
     EyeOutlined,
     EyeInvisibleOutlined,
     EditOutlined,
+    WarningOutlined,
 } from "@ant-design/icons";
 
 const { Title } = Typography;
@@ -210,6 +212,21 @@ export default function BalanceTracker() {
                                         ? formatIDR(currentBalance - totalPrice)
                                         : "•••••••"}
                                 </Title>
+                                         {currentBalance - totalPrice < 0 && (
+      <span
+        style={{
+          display: "inline-flex",
+          alignItems: "center",
+          gap: 4,
+          color: "#ff4d4f",
+          fontSize: 12,
+          marginTop: 2,
+        }}
+      >
+        <WarningOutlined />
+        Your expenses exceed your balance
+      </span>
+    )}
                             </Card>
                         </Col>
 
@@ -309,13 +326,20 @@ export default function BalanceTracker() {
                             boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
                         }}
                     >
-                        <InputNumber
-                            min={0}
-                            value={amount}
-                            onChange={(value) => setAmount(Number(value))}
-                            placeholder="Enter amount"
-                            style={{ width: "100%", marginBottom: 12 }}
-                        />
+                        <Form layout="vertical">
+                            <Form.Item label="Amount">
+                                <InputNumber
+                                    min={0}
+                                    value={amount}
+                                    onChange={(value) =>
+                                        setAmount(Number(value))
+                                    }
+                                    placeholder="Enter amount"
+                                    style={{ width: "100%" }}
+                                />
+                            </Form.Item>
+                        </Form>
+
                         <div style={{ display: "flex", gap: 8 }}>
                             <Button
                                 type="primary"
@@ -342,18 +366,25 @@ export default function BalanceTracker() {
                             boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
                         }}
                     >
-                        <Input
-                            placeholder="Limit title"
-                            value={limitTitle}
-                            onChange={(e) => setLimitTitle(e.target.value)}
-                            style={{ marginBottom: 8 }}
-                        />
-                        <InputNumber
-                            placeholder="Limit value"
-                            value={limitValue}
-                            onChange={(v) => setLimitValue(Number(v))}
-                            style={{ width: "100%", marginBottom: 12 }}
-                        />
+                     <Form layout="vertical" >
+  <Form.Item label="Title" style={{ marginBottom: 8, marginTop:-8 }}>
+    <Input
+      placeholder="Limit title"
+      value={limitTitle}
+      onChange={(e) => setLimitTitle(e.target.value)}
+    />
+  </Form.Item>
+
+  <Form.Item label="Amount" style={{ marginBottom: 16 }}>
+    <InputNumber
+      placeholder="Limit value"
+      value={limitValue}
+      onChange={(v) => setLimitValue(Number(v))}
+      style={{ width: "100%" }}
+    />
+  </Form.Item>
+</Form>
+                     
                         <Button
                             type="primary"
                             block

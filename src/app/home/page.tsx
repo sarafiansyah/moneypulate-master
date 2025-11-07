@@ -102,6 +102,8 @@ export default function Page() {
         pageSize: 50,
     });
     const heirloomArray = Array.isArray(heirlooms) ? [...heirlooms] : [];
+    const [messageApi, contextHolder] = message.useMessage();
+
     heirloomArray.forEach((item) => console.log(item.name));
 
     useEffect(() => {
@@ -150,6 +152,16 @@ export default function Page() {
 
         setPieChartData(mapped);
     }, [heirlooms]);
+
+    const [width, setWidth] = useState<number>(0); // start with 0 or undefined
+
+    useEffect(() => {
+        // runs only on client
+        const handleResize = () => setWidth(window.innerWidth);
+        handleResize(); // set initial width
+        window.addEventListener("resize", handleResize);
+        return () => window.removeEventListener("resize", handleResize);
+    }, []);
 
     const openModal = (item?: Heirloom) => {
         if (item) {
@@ -525,7 +537,7 @@ export default function Page() {
                 );
 
                 if (newUniqueData.length === 0) {
-                    message.info("No new unique records found to add.");
+                    messageApi.info("No new unique records found to add.");
                     return;
                 }
 
@@ -595,8 +607,13 @@ export default function Page() {
         };
     });
 
+    const handleClick = () => {
+        message.info("Nice! Message triggered ✨");
+    };
+
     return (
         <main style={{ padding: "2px 12px" }}>
+            {contextHolder}
             <Row gutter={[24, 24]}>
                 <Row gutter={[22, 22]}>
                     {/* TOP SECTION (1:2:1 Ratio) */}
@@ -640,6 +657,7 @@ export default function Page() {
                                         }}
                                     >
                                         <GaugeChart
+                                            key={width} // force re-render on resize
                                             target={gaugeValue}
                                             total={total}
                                             title=""
@@ -698,6 +716,11 @@ export default function Page() {
                     </Col>
 
                     <Col xs={24} md={12} xl={12}>
+                        <motion.div
+                            variants={cardVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
                         <Card
                             className="heirlooms-card"
                             title={
@@ -844,7 +867,8 @@ export default function Page() {
                             <AnimatePresence>
                                 {isModalOpen && (
                                     <motion.div
-                                        className="fixed inset-0 bg-black/40 flex items-start justify-center pt-24 z-50"
+                                        className="fixed inset-0 bg-black/40 flex items-start justify-center pt-24"
+                                        style={{ zIndex: 9999 }} // 👈 takes full priority
                                         initial={{ opacity: 0 }}
                                         animate={{ opacity: 1 }}
                                         exit={{ opacity: 0 }}
@@ -934,10 +958,15 @@ export default function Page() {
                                     </motion.div>
                                 )}
                             </AnimatePresence>
-                        </Card>
+                        </Card></motion.div>
                     </Col>
 
                     <Col xs={24} md={6} xl={6}>
+                           <motion.div
+                            variants={cardVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
                         <Card
                             title={
                                 <span
@@ -967,8 +996,9 @@ export default function Page() {
                             >
                                 {pieChartData && pieChartData.length > 0 ? (
                                     <PieChart
+                                        key={width}
                                         data={pieChartData}
-                                        title="SalesRetuynr"
+                                        title="SalesReturn"
                                     />
                                 ) : (
                                     <div style={{ marginTop: 30 }}>
@@ -979,11 +1009,16 @@ export default function Page() {
                                     </div>
                                 )}
                             </div>
-                        </Card>
+                        </Card></motion.div>
                     </Col>
 
                     {/* BOTTOM SECTION */}
                     <Col xs={24} md={8} xl={8}>
+                        <motion.div
+                            variants={cardVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
                         <Card
                             className="reward-history-"
                             title={
@@ -1097,10 +1132,15 @@ export default function Page() {
                                     },
                                 }}
                             />
-                        </Card>
+                        </Card></motion.div>
                     </Col>
 
                     <Col xs={24} md={8} xl={8}>
+                        <motion.div
+                            variants={cardVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
                         <Card
                             title={
                                 <span
@@ -1209,10 +1249,15 @@ export default function Page() {
                                     Supported formats: .xlsx, .xls
                                 </Text>
                             </Space>
-                        </Card>
+                        </Card></motion.div>
                     </Col>
 
                     <Col xs={24} md={8} xl={8}>
+                        <motion.div
+                            variants={cardVariants}
+                            initial="hidden"
+                            animate="visible"
+                        >
                         <Card
                             title={
                                 <span
@@ -1245,7 +1290,7 @@ export default function Page() {
                                     colorField="name"
                                 />
                             </div>
-                        </Card>
+                        </Card></motion.div>
                     </Col>
                 </Row>
             </Row>
