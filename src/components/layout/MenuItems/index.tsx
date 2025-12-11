@@ -21,10 +21,10 @@ const baseMenuItems = [
         label: "Balance",
         path: "/balance",
     },
-    {
-        icon: <UserOutlined />,
-        label: "Profile",
-        path: "/profile",
+      {
+        icon: <DollarOutlined />,
+        label: "Account",
+        path: "/bank",
     },
     {
         icon: <GoldOutlined />,
@@ -35,6 +35,11 @@ const baseMenuItems = [
         icon: <ReadOutlined />,
         label: "Transactions",
         path: "/transaction-history",
+    },
+      {
+        icon: <UserOutlined />,
+        label: "Profile",
+        path: "/profile",
     },
     {
         icon: <DatabaseOutlined />,

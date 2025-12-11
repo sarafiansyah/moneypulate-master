@@ -18,6 +18,10 @@ interface BalanceState {
 
     setBalance: (newBalance: number) => void;
     setTotalIncome: (newTotal: number) => void;
+setHeirloomsTotal: (heirloomsTotal: number) => void;
+    // 🔥 Tambahin ini
+    setBankBalance: (bankTotal: number) => void;
+
     resetAll: () => void;
 }
 
@@ -45,21 +49,18 @@ export const useBalanceStore = create(
       currentBalance: 0,
       limits: [],
 
-      // ➕ Add income
       addIncome: (amount) =>
         set((state) => ({
           totalIncome: state.totalIncome + amount,
           currentBalance: state.currentBalance + amount,
         })),
 
-      // ➕ Add normal limit
       addLimit: (title, value) =>
         set((state) => ({
           limits: [...state.limits, { title, value }],
           currentBalance: state.currentBalance - value,
         })),
 
-      // ❌ Remove limit
       removeLimit: (title) =>
         set((state) => {
           const limitToRemove = state.limits.find((l) => l.title === title);
@@ -70,36 +71,33 @@ export const useBalanceStore = create(
           };
         }),
 
-      // ✏️ Edit limit
       editLimit: (oldTitle, newTitle, newValue) =>
         set((state) => {
           const target = state.limits.find((l) => l.title === oldTitle);
           if (!target) return state;
 
-          const valueDiff = newValue - target.value;
+          const diff = newValue - target.value;
           const updatedLimits = state.limits.map((l) =>
             l.title === oldTitle ? { title: newTitle, value: newValue } : l
           );
 
           return {
             limits: updatedLimits,
-            currentBalance: state.currentBalance - valueDiff,
+            currentBalance: state.currentBalance - diff,
           };
         }),
 
-      // 🔧 Special Heirlooms limit update
-      setHeirloomsTotal: (heirloomsTotal: number) =>
+      setHeirloomsTotal: (heirloomsTotal) =>
         set((state) => {
           const otherLimits = state.limits.filter(l => l.title !== "Heirlooms");
           const updatedLimits = [...otherLimits, { title: "Heirlooms", value: heirloomsTotal }];
 
           return {
             limits: updatedLimits,
-            currentBalance: state.totalIncome - updatedLimits.reduce((sum, l) => sum + l.value, 0),
+            currentBalance: state.totalIncome - updatedLimits.reduce((a, b) => a + b.value, 0),
           };
         }),
 
-      // ⚙️ Set balance manually
       setBalance: (newBalance) =>
         set(() => ({ currentBalance: newBalance })),
 
@@ -110,7 +108,14 @@ export const useBalanceStore = create(
             newTotal - state.limits.reduce((sum, l) => sum + l.value, 0),
         })),
 
-      // 🔄 Reset all
+   setBankBalance: (bankTotal: number) =>
+  set((state) => ({
+    totalIncome: bankTotal,
+    currentBalance:
+      bankTotal - state.limits.reduce((sum, l) => sum + l.value, 0),
+  })),
+
+
       resetAll: () =>
         set({
           totalIncome: 0,

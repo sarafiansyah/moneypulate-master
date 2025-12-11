@@ -71,7 +71,7 @@ export default function ClientLayout({
             <ConfigProvider
                 theme={{
                     token: {
-                        colorText: "#5d5d5dff", // 🌈 global text color
+                        colorText: "#5d5d5dff",
                         colorTextHeading: "#595959ff", // headings
                         colorPrimary: "#21ba0aff",
                         fontFamily: "'Poppins', sans-serif",
@@ -225,7 +225,9 @@ export default function ClientLayout({
                     {/* Main layout */}
                     <Layout
                         style={{
-                            margin: "16px 10px 16px 0",
+                            margin: isSmallScreen
+                                ? "16px 10px 16px -20px"
+                                : "16px 10px 16px 0px",
                             borderRadius: 12,
                             background: "transparent",
                             display: "flex",
@@ -323,8 +325,11 @@ export default function ClientLayout({
                                                     strong
                                                     style={{ fontSize: 14 }}
                                                 >
-                                                    {firstName || "—"}{" "}
-                                                    {lastName || ""}
+                                                    {isSmallScreen
+                                                        ? firstName || "—"
+                                                        : `${
+                                                              firstName || "—"
+                                                          } ${lastName || ""}`}
                                                 </Text>
                                                 <Text
                                                     type="secondary"
